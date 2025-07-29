@@ -23,18 +23,14 @@ export const config = createConfig({
   },
 });
 
-interface OwnProps {}
-
-type Props = PropsWithChildren<OwnProps>; 
-
-export function RainbowProvider(props: Props) {
+export function RainbowProvider({ children }: PropsWithChildren) {
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider theme={lightTheme({
           accentColor: '#A178DF',
           borderRadius: 'small'
-        })}>{props.children}</RainbowKitProvider>
+        })}>{children}</RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );

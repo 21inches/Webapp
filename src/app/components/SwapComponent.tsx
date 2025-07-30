@@ -7,10 +7,13 @@ import {
   useSwitchChain,
   useWriteContract,
   useReadContract,
+  useSignTypedData,
 } from "wagmi";
 import { sepolia, baseSepolia } from "wagmi/chains";
 import { formatUnits, parseUnits } from "viem";
 import { ChevronDownIcon, ArrowsUpDownIcon } from "@heroicons/react/24/outline";
+import { createOrder } from "../logic/swap";
+
 
 // Mock token data - replace with actual token lists
 const TOKENS: Record<number, Token[]> = {
@@ -74,6 +77,7 @@ interface SwapState {
 
 export default function SwapComponent() {
   const { address, isConnected } = useAccount();
+  const { signTypedData, signTypedDataAsync } = useSignTypedData()
   const { switchChain } = useSwitchChain();
   const { writeContract } = useWriteContract();
 
@@ -223,10 +227,27 @@ export default function SwapComponent() {
     try {
       // Switch to source chain if needed and wait for confirmation
       await switchChain({ chainId: swapState.fromChain });
+      console.log("Switched to source chain");
+      const secret = "0x0000000000000000000000000000000000000000000000000000000000000000"
+      const orderData = await createOrder(address!, swapState.fromAmount, swapState.toAmount, swapState.fromToken.address, swapState.toToken.address, secret, swapState.fromChain, swapState.toChain);
 
       // Add a small delay to ensure the chain switch is complete
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
+      const signature = await signTypedDataAsync({
+        domain: {
+          name: "1inch Limit Order Protocol",
+          version: "4",
+          chainId: swapState.fromChain,
+          verifyingContract: "0x32a209c3736c5bd52e395eabc86b9bca4f602985",
+        },
+        types: orderData.orderTypedData.types,
+        primaryType: orderData.orderTypedData.primaryType,
+        message: orderData.orderTypedData.message,
+      })
+      console.log("Order:", orderData.orderTypedData);
+      console.log("Signature:", signature);
+//       typedData.message
       // Here you would implement the actual swap logic
       // This could involve:
       // 1. Approving tokens if needed
@@ -255,7 +276,7 @@ export default function SwapComponent() {
   };
 
   return (
-    <div className="w-md mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 border border-gray-200 dark:border-gray-700">
+    <div className="w-md mx-auto bg-white dyesark:bg-gray-800 rounded-2xl shadow-xl p-6 border border-gray-200 dark:border-gray-700">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
           Bridge Assets

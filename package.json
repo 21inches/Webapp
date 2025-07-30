@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@1inch/cross-chain-sdk": "git+https://github.com/21inches/cross-chain-sdk.git",
     "@heroicons/react": "^2.2.0",
     "@rainbow-me/rainbowkit": "^2.2.8",
     "@tanstack/react-query": "^5.83.0",

@@ -247,7 +247,31 @@ export default function SwapComponent() {
       })
       console.log("Order:", orderData.orderTypedData);
       console.log("Signature:", signature);
-//       typedData.message
+      
+      // Send order and signature to API
+      try {
+        const response = await fetch('/api/order', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            order: orderData.orderTypedData,
+            signature: signature,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`API call failed: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log("API response:", result);
+      } catch (apiError) {
+        console.error("API call failed:", apiError);
+        throw apiError;
+      }
+
       // Here you would implement the actual swap logic
       // This could involve:
       // 1. Approving tokens if needed

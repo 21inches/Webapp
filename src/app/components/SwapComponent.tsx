@@ -1,9 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAccount, useBalance, useSwitchChain } from "wagmi";
+import {
+  useAccount,
+  useBalance,
+  useSwitchChain,
+  useWriteContract,
+  useReadContract,
+} from "wagmi";
 import { sepolia, baseSepolia } from "wagmi/chains";
-import { formatUnits } from "viem";
+import { formatUnits, parseUnits } from "viem";
 import { ChevronDownIcon, ArrowsUpDownIcon } from "@heroicons/react/24/outline";
 
 // Mock token data - replace with actual token lists
@@ -26,6 +32,12 @@ const TOKENS: Record<number, Token[]> = {
       logo: "/blt-logo.svg",
     },
   ],
+};
+
+// LOP (Liquidity Optimization Protocol) addresses per chain
+const LOP_ADDRESSES: Record<number, string> = {
+  [sepolia.id]: "0x32a209c3736c5bd52e395eabc86b9bca4f602985", // Replace with actual LOP address for Sepolia
+  [baseSepolia.id]: "0xe30f9abbadc1eb84b41d41035b2a2c7d0bd5f9b2", // Replace with actual LOP address for Base Sepolia
 };
 
 const CHAINS = [
@@ -63,6 +75,7 @@ interface SwapState {
 export default function SwapComponent() {
   const { address, isConnected } = useAccount();
   const { switchChain } = useSwitchChain();
+  const { writeContract } = useWriteContract();
 
   const [swapState, setSwapState] = useState<SwapState>({
     fromChain: sepolia.id,
@@ -74,6 +87,7 @@ export default function SwapComponent() {
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
   const [showFromTokenList, setShowFromTokenList] = useState(false);
   const [showToTokenList, setShowToTokenList] = useState(false);
   const [showFromChainList, setShowFromChainList] = useState(false);
@@ -87,6 +101,90 @@ export default function SwapComponent() {
         : (swapState.fromToken.address as `0x${string}`),
     chainId: swapState.fromChain,
   });
+
+  // Check current allowance for the from token
+  const { data: currentAllowance } = useReadContract({
+    address: swapState.fromToken.address as `0x${string}`,
+    abi: [
+      {
+        inputs: [
+          { name: "owner", type: "address" },
+          { name: "spender", type: "address" },
+        ],
+        name: "allowance",
+        outputs: [{ name: "", type: "uint256" }],
+        stateMutability: "view",
+        type: "function",
+      },
+    ],
+    functionName: "allowance",
+    args: [
+      address as `0x${string}`,
+      LOP_ADDRESSES[swapState.fromChain] as `0x${string}`,
+    ],
+    chainId: swapState.fromChain,
+    query: {
+      enabled:
+        !!address &&
+        swapState.fromToken.address !== "0x" &&
+        !!LOP_ADDRESSES[swapState.fromChain],
+    },
+  });
+
+  // Calculate if approval is needed
+  const needsApproval = () => {
+    if (!swapState.fromAmount || swapState.fromToken.address === "0x")
+      return false;
+    if (!currentAllowance) return true;
+
+    try {
+      const amountToSwap = parseUnits(
+        swapState.fromAmount,
+        swapState.fromToken.decimals
+      );
+      return currentAllowance < amountToSwap;
+    } catch {
+      return false;
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!address || swapState.fromToken.address === "0x") return;
+
+    setIsApproving(true);
+    try {
+      // Approve a large amount (or unlimited) to avoid frequent approvals
+      // You can also approve the exact amount by using parseUnits(swapState.fromAmount || "0", swapState.fromToken.decimals)
+      const maxUint256 = BigInt(
+        "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      );
+
+      await writeContract({
+        address: swapState.fromToken.address as `0x${string}`,
+        abi: [
+          {
+            inputs: [
+              { name: "spender", type: "address" },
+              { name: "amount", type: "uint256" },
+            ],
+            name: "approve",
+            outputs: [{ name: "", type: "bool" }],
+            stateMutability: "nonpayable",
+            type: "function",
+          },
+        ],
+        functionName: "approve",
+        args: [
+          LOP_ADDRESSES[swapState.fromChain] as `0x${string}`,
+          maxUint256, // Approve maximum amount to avoid repeated approvals
+        ],
+      });
+    } catch (error) {
+      console.error("Approval failed:", error);
+    } finally {
+      setIsApproving(false);
+    }
+  };
 
   // Mock price calculation - replace with actual pricing API
   useEffect(() => {
@@ -138,6 +236,12 @@ export default function SwapComponent() {
   ) => {
     if (!balance) return "0.00";
     return Number(formatUnits(balance.value, balance.decimals)).toFixed(4);
+  };
+
+  const formatAllowance = (allowance: bigint | undefined, decimals: number) => {
+    console.log(allowance);
+    if (!allowance) return "0.00";
+    return Number(formatUnits(allowance, decimals)).toFixed(4);
   };
 
   return (
@@ -374,16 +478,55 @@ export default function SwapComponent() {
           </span>
           <span className="text-blue-700 dark:text-blue-300">3-5 minutes</span>
         </div>
+        {swapState.fromToken.address !== "0x" && (
+          <div className="flex justify-between text-sm mt-1">
+            <span className="text-blue-700 dark:text-blue-300">
+              Current Allowance:
+            </span>
+            <span className="text-blue-700 dark:text-blue-300">
+              {formatAllowance(currentAllowance, swapState.fromToken.decimals)}{" "}
+              {swapState.fromToken.symbol}
+            </span>
+          </div>
+        )}
       </div>
+
+      {/* Approval Section */}
+      {needsApproval() && isConnected && (
+        <div className="mb-4 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-orange-700 dark:text-orange-300">
+                Approval Required
+              </p>
+              <p className="text-xs text-orange-600 dark:text-orange-400">
+                Allow LOP contract to transfer your {swapState.fromToken.symbol}{" "}
+                tokens
+              </p>
+            </div>
+            <button
+              onClick={handleApprove}
+              disabled={isApproving}
+              className="bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm"
+            >
+              {isApproving ? "Approving..." : "Approve"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Swap Button */}
       <button
         onClick={handleSwap}
-        disabled={!isConnected || !swapState.fromAmount || isLoading}
+        disabled={
+          !isConnected || !swapState.fromAmount || isLoading || needsApproval()
+        }
         className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl transition-colors"
       >
         {!isConnected
           ? "Connect Wallet"
+          : needsApproval()
+          ? "Approval Required First"
           : isLoading
           ? "Bridging..."
           : "Bridge Assets"}

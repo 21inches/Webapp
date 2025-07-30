@@ -2,20 +2,18 @@ import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
 import "./globals.css";
 import { RainbowProvider } from "./RainbowProvider";
-import { Navbar } from "./Navbar";
-
+import { Navbar } from "./components/Navbar";
+import { Footer } from "./components/Footer";
 
 const roboto = Roboto({
   weight: "400",
   subsets: ["latin"],
 });
 
-
 export const metadata: Metadata = {
   title: "21 Inches",
   description: "Lets make defi bigger",
 };
-
 
 export default function RootLayout({
   children,
@@ -29,6 +27,7 @@ export default function RootLayout({
           <div className=" relative w-full">
             <Navbar />
             {children}
+            <Footer />
           </div>
         </RainbowProvider>
       </body>

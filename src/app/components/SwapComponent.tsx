@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAccount, useBalance, useSwitchChain } from "wagmi";
 import { sepolia, baseSepolia } from "wagmi/chains";
-import { formatUnits, parseUnits } from "viem";
+import { formatUnits } from "viem";
 import { ChevronDownIcon, ArrowsUpDownIcon } from "@heroicons/react/24/outline";
 
 // Mock token data - replace with actual token lists
@@ -133,7 +133,9 @@ export default function SwapComponent() {
     }
   };
 
-  const formatBalance = (balance: any) => {
+  const formatBalance = (
+    balance: { value: bigint; decimals: number } | undefined
+  ) => {
     if (!balance) return "0.00";
     return Number(formatUnits(balance.value, balance.decimals)).toFixed(4);
   };

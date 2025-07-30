@@ -1,7 +1,6 @@
-import { Interface, Signature, TypedDataEncoder } from 'ethers';
-import * as Sdk from '@1inch/cross-chain-sdk';
-import { Address } from '@1inch/cross-chain-sdk';
-import ResolverABI from './abi/Resolver.json';
+import { Interface, Signature, TypedDataEncoder } from "ethers";
+import * as Sdk from "@1inch/cross-chain-sdk";
+import ResolverABI from "./abi/Resolver.json";
 
 // Use the actual Resolver ABI from the JSON file
 const RESOLVER_ABI = ResolverABI.abi;
@@ -49,7 +48,7 @@ class Resolver {
 
     return {
       to: this.srcAddress,
-      data: this.iface.encodeFunctionData('deploySrc', [
+      data: this.iface.encodeFunctionData("deploySrc", [
         immutables,
         order.build(),
         r,
@@ -65,10 +64,10 @@ class Resolver {
   hashOrder(srcChainId: number, order: any): string {
     const typedData = order.getTypedData(srcChainId);
     const domain = {
-      name: '1inch Limit Order Protocol',
-      version: '4',
+      name: "1inch Limit Order Protocol",
+      version: "4",
       chainId: srcChainId,
-      verifyingContract: '0x32a209c3736c5bd52e395eabc86b9bca4f602985',
+      verifyingContract: "0x32a209c3736c5bd52e395eabc86b9bca4f602985",
     };
     return TypedDataEncoder.hash(
       domain,
@@ -80,7 +79,7 @@ class Resolver {
   deployDst(immutables: any): TransactionData {
     return {
       to: this.dstAddress,
-      data: this.iface.encodeFunctionData('deployDst', [
+      data: this.iface.encodeFunctionData("deployDst", [
         immutables.build(),
         immutables.timeLocks.toSrcTimeLocks().privateCancellation,
       ]),
@@ -89,14 +88,14 @@ class Resolver {
   }
 
   withdraw(
-    side: 'src' | 'dst',
+    side: "src" | "dst",
     escrow: any,
     secret: string,
     immutables: any
   ): TransactionData {
     return {
-      to: side === 'src' ? this.srcAddress : this.dstAddress,
-      data: this.iface.encodeFunctionData('withdraw', [
+      to: side === "src" ? this.srcAddress : this.dstAddress,
+      data: this.iface.encodeFunctionData("withdraw", [
         escrow.toString(),
         secret,
         immutables.build(),
@@ -104,10 +103,10 @@ class Resolver {
     };
   }
 
-  cancel(side: 'src' | 'dst', escrow: any, immutables: any): TransactionData {
+  cancel(side: "src" | "dst", escrow: any, immutables: any): TransactionData {
     return {
-      to: side === 'src' ? this.srcAddress : this.dstAddress,
-      data: this.iface.encodeFunctionData('cancel', [
+      to: side === "src" ? this.srcAddress : this.dstAddress,
+      data: this.iface.encodeFunctionData("cancel", [
         escrow.toString(),
         immutables.build(),
       ]),

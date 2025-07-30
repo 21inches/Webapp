@@ -14,7 +14,6 @@ import { formatUnits, parseUnits } from "viem";
 import { ChevronDownIcon, ArrowsUpDownIcon } from "@heroicons/react/24/outline";
 import { createOrder } from "../logic/swap";
 
-
 // Mock token data - replace with actual token lists
 const TOKENS: Record<number, Token[]> = {
   [sepolia.id]: [
@@ -77,7 +76,7 @@ interface SwapState {
 
 export default function SwapComponent() {
   const { address, isConnected } = useAccount();
-  const { signTypedData, signTypedDataAsync } = useSignTypedData()
+  const { signTypedData, signTypedDataAsync } = useSignTypedData();
   const { switchChain } = useSwitchChain();
   const { writeContract } = useWriteContract();
 
@@ -161,7 +160,7 @@ export default function SwapComponent() {
       await switchChain({ chainId: swapState.fromChain });
 
       // Add a small delay to ensure the chain switch is complete
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Approve the exact amount the user wants to swap
       const amountToApprove = parseUnits(
@@ -201,7 +200,7 @@ export default function SwapComponent() {
   useEffect(() => {
     if (swapState.fromAmount && !isNaN(Number(swapState.fromAmount))) {
       // Simple 1:1 conversion for demo - replace with actual rates
-      setSwapState((prev) => ({
+      setSwapState(prev => ({
         ...prev,
         toAmount: prev.fromAmount,
       }));
@@ -209,7 +208,7 @@ export default function SwapComponent() {
   }, [swapState.fromAmount]);
 
   const handleSwapDirection = () => {
-    setSwapState((prev) => ({
+    setSwapState(prev => ({
       ...prev,
       fromChain: prev.toChain,
       toChain: prev.fromChain,
@@ -228,11 +227,21 @@ export default function SwapComponent() {
       // Switch to source chain if needed and wait for confirmation
       await switchChain({ chainId: swapState.fromChain });
       console.log("Switched to source chain");
-      const secret = "0x0000000000000000000000000000000000000000000000000000000000000000"
-      const orderData = await createOrder(address!, swapState.fromAmount, swapState.toAmount, swapState.fromToken.address, swapState.toToken.address, secret, swapState.fromChain, swapState.toChain);
+      const secret =
+        "0x0000000000000000000000000000000000000000000000000000000000000000";
+      const orderData = await createOrder(
+        address!,
+        swapState.fromAmount,
+        swapState.toAmount,
+        swapState.fromToken.address,
+        swapState.toToken.address,
+        secret,
+        swapState.fromChain,
+        swapState.toChain
+      );
 
       // Add a small delay to ensure the chain switch is complete
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       const signature = await signTypedDataAsync({
         domain: {
@@ -244,16 +253,16 @@ export default function SwapComponent() {
         types: orderData.orderTypedData.types,
         primaryType: orderData.orderTypedData.primaryType,
         message: orderData.orderTypedData.message,
-      })
+      });
       console.log("Order:", orderData.orderTypedData);
       console.log("Signature:", signature);
-      
+
       // Send order and signature to API
       try {
-        const response = await fetch('/api/order', {
-          method: 'POST',
+        const response = await fetch("/api/order", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             order: orderData.orderTypedData,
@@ -334,18 +343,18 @@ export default function SwapComponent() {
               >
                 <div className="w-6 h-6 bg-gray-300 rounded-full"></div>
                 <span className="text-sm font-medium">
-                  {CHAINS.find((c) => c.id === swapState.fromChain)?.name}
+                  {CHAINS.find(c => c.id === swapState.fromChain)?.name}
                 </span>
                 <ChevronDownIcon className="w-4 h-4" />
               </button>
 
               {showFromChainList && (
                 <div className="absolute top-full left-0 mt-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-10 min-w-full">
-                  {CHAINS.map((chain) => (
+                  {CHAINS.map(chain => (
                     <button
                       key={chain.id}
                       onClick={() => {
-                        setSwapState((prev) => ({
+                        setSwapState(prev => ({
                           ...prev,
                           fromChain: chain.id,
                           fromToken: TOKENS[chain.id][0],
@@ -377,11 +386,11 @@ export default function SwapComponent() {
 
               {showFromTokenList && (
                 <div className="absolute top-full right-0 mt-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-10 min-w-full">
-                  {TOKENS[swapState.fromChain]?.map((token) => (
+                  {TOKENS[swapState.fromChain]?.map(token => (
                     <button
                       key={token.address}
                       onClick={() => {
-                        setSwapState((prev) => ({ ...prev, fromToken: token }));
+                        setSwapState(prev => ({ ...prev, fromToken: token }));
                         setShowFromTokenList(false);
                       }}
                       className="w-full flex items-center space-x-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
@@ -405,8 +414,8 @@ export default function SwapComponent() {
           <input
             type="number"
             value={swapState.fromAmount}
-            onChange={(e) =>
-              setSwapState((prev) => ({ ...prev, fromAmount: e.target.value }))
+            onChange={e =>
+              setSwapState(prev => ({ ...prev, fromAmount: e.target.value }))
             }
             placeholder="0.0"
             className="w-full text-2xl font-semibold bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder-gray-400"
@@ -445,19 +454,19 @@ export default function SwapComponent() {
               >
                 <div className="w-6 h-6 bg-gray-300 rounded-full"></div>
                 <span className="text-sm font-medium">
-                  {CHAINS.find((c) => c.id === swapState.toChain)?.name}
+                  {CHAINS.find(c => c.id === swapState.toChain)?.name}
                 </span>
                 <ChevronDownIcon className="w-4 h-4" />
               </button>
 
               {showToChainList && (
                 <div className="absolute top-full left-0 mt-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-10 min-w-full">
-                  {CHAINS.filter((c) => c.id !== swapState.fromChain).map(
-                    (chain) => (
+                  {CHAINS.filter(c => c.id !== swapState.fromChain).map(
+                    chain => (
                       <button
                         key={chain.id}
                         onClick={() => {
-                          setSwapState((prev) => ({
+                          setSwapState(prev => ({
                             ...prev,
                             toChain: chain.id,
                             toToken: TOKENS[chain.id][0],
@@ -490,11 +499,11 @@ export default function SwapComponent() {
 
               {showToTokenList && (
                 <div className="absolute top-full right-0 mt-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-10 min-w-full">
-                  {TOKENS[swapState.toChain]?.map((token) => (
+                  {TOKENS[swapState.toChain]?.map(token => (
                     <button
                       key={token.address}
                       onClick={() => {
-                        setSwapState((prev) => ({ ...prev, toToken: token }));
+                        setSwapState(prev => ({ ...prev, toToken: token }));
                         setShowToTokenList(false);
                       }}
                       className="w-full flex items-center space-x-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
@@ -581,10 +590,10 @@ export default function SwapComponent() {
         {!isConnected
           ? "Connect Wallet"
           : needsApproval()
-          ? "Approval Required First"
-          : isLoading
-          ? "Bridging..."
-          : "Bridge Assets"}
+            ? "Approval Required First"
+            : isLoading
+              ? "Bridging..."
+              : "Bridge Assets"}
       </button>
 
       {/* Transaction Status */}

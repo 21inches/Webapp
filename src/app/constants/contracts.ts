@@ -1,10 +1,10 @@
 import { parseEther } from "viem";
 export const ChainIds = {
-    Sepolia: 11155111,
-    BaseSepolia: 84532,
-}
+  Sepolia: 11155111,
+  BaseSepolia: 84532,
+};
 export const ChainConfigs = {
-    [ChainIds.Sepolia]: {
+  [ChainIds.Sepolia]: {
     LOP: "0x32a209c3736c5bd52e395eabc86b9bca4f602985",
     EscrowFactory: "0x61a32a9263c6ff568c66799a94f8fe09c1db7a66",
     ResolverContractAddress: "0xe002e8e986fd4bbff58b49423c7f7e0e0e92cc59",

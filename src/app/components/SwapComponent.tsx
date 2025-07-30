@@ -153,10 +153,16 @@ export default function SwapComponent() {
 
     setIsApproving(true);
     try {
-      // Approve a large amount (or unlimited) to avoid frequent approvals
-      // You can also approve the exact amount by using parseUnits(swapState.fromAmount || "0", swapState.fromToken.decimals)
-      const maxUint256 = BigInt(
-        "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      // Switch to the correct chain first and wait for confirmation
+      await switchChain({ chainId: swapState.fromChain });
+
+      // Add a small delay to ensure the chain switch is complete
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Approve the exact amount the user wants to swap
+      const amountToApprove = parseUnits(
+        swapState.fromAmount || "0",
+        swapState.fromToken.decimals
       );
 
       await writeContract({
@@ -176,8 +182,9 @@ export default function SwapComponent() {
         functionName: "approve",
         args: [
           LOP_ADDRESSES[swapState.fromChain] as `0x${string}`,
-          maxUint256, // Approve maximum amount to avoid repeated approvals
+          amountToApprove, // Approve only the exact amount needed
         ],
+        chainId: swapState.fromChain, // Explicitly specify the chain ID
       });
     } catch (error) {
       console.error("Approval failed:", error);
@@ -214,8 +221,11 @@ export default function SwapComponent() {
 
     setIsLoading(true);
     try {
-      // Switch to source chain if needed
+      // Switch to source chain if needed and wait for confirmation
       await switchChain({ chainId: swapState.fromChain });
+
+      // Add a small delay to ensure the chain switch is complete
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Here you would implement the actual swap logic
       // This could involve:

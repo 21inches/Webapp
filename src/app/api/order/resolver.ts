@@ -31,6 +31,16 @@ export const deploySrcCallData = (
     };
 };
 
+export const deployDstCallData = (dstAddress: string, immutablesData: Sdk.ImmutablesData, privateCancellation: bigint, safetyDeposit: bigint): TransactionData => {
+    return {
+      to: dstAddress,
+      data: new Interface(RESOLVER_ABI).encodeFunctionData("deployDst", [
+        immutablesData,
+        privateCancellation,
+      ]),
+      value: safetyDeposit,
+    };
+  }
 // Use the actual Resolver ABI from the JSON file
 const RESOLVER_ABI = ResolverABI.abi;
 

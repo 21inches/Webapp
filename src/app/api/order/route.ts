@@ -44,18 +44,20 @@ export async function POST(request: Request) {
     const srcEscrowEvent = await srcEscrowFactory.getSrcDeployEvent(
         srcDeployBlock
     );
+    console.log("Src escrow event fetched", srcEscrowEvent);
     const [immutables2, complement] = srcEscrowEvent;
-    const dstImmutables = {
-        ...immutables2,
-        ...complement,
-        taker: new Address(resolverContract.dstAddress)
-    };
+    const dstImmutables = (srcEscrowEvent[0] as Immutables)
+    .withComplement(srcEscrowEvent[1])
+    .withTaker(new Address(resolverContract.dstAddress));
     console.log("Src escrow event fetched");
 
     console.log("Deploying dst escrow...");
+    console.log("Dst immutables", dstImmutables);
+
     const dstChainResolver = getChainResolver(swapState.toChain);
     const { txHash: dstDepositHash } =
-    await dstChainResolver.send(resolverContract.deployDst(dstImmutables as Immutables));
+    await dstChainResolver.send(
+        resolverContract.deployDst(dstImmutables as Immutables));
     console.log("Dst escrow deployed", dstDepositHash);
     return NextResponse.json(req);
 }

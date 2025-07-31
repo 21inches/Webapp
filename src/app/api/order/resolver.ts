@@ -1,5 +1,5 @@
-import { Interface, Signature, TypedDataEncoder } from "ethers";
 import * as Sdk from "@1inch/cross-chain-sdk";
+import { Interface, Signature, TypedDataEncoder } from "ethers";
 import ResolverABI from "./abi/Resolver.json";
 
 // Use the actual Resolver ABI from the JSON file

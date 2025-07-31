@@ -300,7 +300,7 @@ export default function SwapComponent() {
       // Here you would implement the actual swap logic
       // This could involve:
       // 1. Approving tokens if needed
-      // 2. Calling bridge contract
+      // 2. Calling exchange contract
       // 3. Waiting for confirmation
 
       console.log("Swap initiated:", swapState);
@@ -328,7 +328,7 @@ export default function SwapComponent() {
     <div className="w-md mx-auto bg-white dyesark:bg-gray-800 rounded-2xl shadow-xl p-6 border border-gray-200 dark:border-gray-700">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Bridge Assets
+          Exchange Assets
         </h2>
         <div className="flex items-center space-x-2">
           <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -546,10 +546,10 @@ export default function SwapComponent() {
         </div>
       </div>
 
-      {/* Bridge Info */}
+      {/* Exchange Info */}
       <div className="mb-6 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
         <div className="flex justify-between text-sm">
-          <span className="text-blue-700 dark:text-blue-300">Bridge Fee:</span>
+          <span className="text-blue-700 dark:text-blue-300">Exchange Fee:</span>
           <span className="text-blue-700 dark:text-blue-300">~0.001 ETH</span>
         </div>
         <div className="flex justify-between text-sm mt-1">
@@ -595,7 +595,7 @@ export default function SwapComponent() {
         </div>
       )}
 
-      {/* Swap Button */}
+      {/* Exchange Button */}
       <button
         onClick={handleSwap}
         disabled={
@@ -608,8 +608,8 @@ export default function SwapComponent() {
           : needsApproval()
             ? "Approval Required First"
             : isLoading
-              ? "Bridging..."
-              : "Bridge Assets"}
+              ? "Exchanging..."
+              : "Exchange Assets"}
       </button>
 
       {/* Transaction Status */}
@@ -618,7 +618,7 @@ export default function SwapComponent() {
           <div className="flex items-center space-x-2">
             <div className="w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
             <span className="text-sm text-yellow-700 dark:text-yellow-300">
-              Processing bridge transaction...
+              Processing exchange transaction...
             </span>
           </div>
         </div>

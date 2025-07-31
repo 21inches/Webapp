@@ -25,11 +25,11 @@ class Resolver {
 
   deploySrc(
     chainId: number,
-    order: any, // Use SDK Order type
+    order: Sdk.CrossChainOrder, // Use SDK CrossChainOrder type
     signature: string,
-    takerTraits: any, // Use SDK TakerTraits type
+    takerTraits: Sdk.TakerTraits, // Use SDK TakerTraits type
     amount: bigint,
-    hashLock: any = order.escrowExtension.hashLockInfo
+    hashLock: Sdk.HashLock = order.escrowExtension.hashLockInfo
   ): TransactionData {
     // Parse signature using ethers
     const { r, yParityAndS: vs } = Signature.from(signature);
@@ -61,7 +61,7 @@ class Resolver {
     };
   }
 
-  hashOrder(srcChainId: number, order: any): string {
+  hashOrder(srcChainId: number, order: Sdk.CrossChainOrder): string {
     const typedData = order.getTypedData(srcChainId);
     const domain = {
       name: "1inch Limit Order Protocol",
@@ -76,7 +76,7 @@ class Resolver {
     );
   }
 
-  deployDst(immutables: any): TransactionData {
+  deployDst(immutables: Sdk.Immutables): TransactionData {
     return {
       to: this.dstAddress,
       data: this.iface.encodeFunctionData("deployDst", [
@@ -89,9 +89,9 @@ class Resolver {
 
   withdraw(
     side: "src" | "dst",
-    escrow: any,
+    escrow: Sdk.Address,
     secret: string,
-    immutables: any
+    immutables: Sdk.Immutables
   ): TransactionData {
     return {
       to: side === "src" ? this.srcAddress : this.dstAddress,
@@ -103,7 +103,7 @@ class Resolver {
     };
   }
 
-  cancel(side: "src" | "dst", escrow: any, immutables: any): TransactionData {
+  cancel(side: "src" | "dst", escrow: Sdk.Address, immutables: Sdk.Immutables): TransactionData {
     return {
       to: side === "src" ? this.srcAddress : this.dstAddress,
       data: this.iface.encodeFunctionData("cancel", [

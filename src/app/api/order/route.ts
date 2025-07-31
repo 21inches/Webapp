@@ -2,6 +2,7 @@ import {
     Address,
     AmountMode,
     CrossChainOrder,
+    Immutables,
     TakerTraits
 } from "@1inch/cross-chain-sdk";
 import { NextResponse } from "next/server";
@@ -27,27 +28,40 @@ export async function POST(request: Request) {
     // The order data should contain the necessary properties
     const srcChainResolver = getChainResolver(swapState.fromChain);
     
-    // Try to reconstruct the CrossChainOrder properly
+    // Debug the order structure
+    console.log("Order keys:", Object.keys(order));
+    console.log("Order.inner keys:", order.inner ? Object.keys(order.inner) : "No inner");
+    console.log("Order.inner.inner keys:", order.inner?.inner ? Object.keys(order.inner.inner) : "No inner.inner");
+    
     let orderObject;
     try {
-        // First try with the original approach
-        orderObject = CrossChainOrder.fromDataAndExtension(order.inner.inner, order.inner.extension);
-    } catch (error: any) {
-        console.log("Failed to reconstruct with fromDataAndExtension, trying alternative approach...");
-        console.log("Error:", error.message);
-        
-        // Alternative: Create a mock CrossChainOrder with the data we have
-
+        // Try different approaches to reconstruct the CrossChainOrder
+        if (order.inner?.inner) {
+            console.log("Trying with order.inner.inner");
+            orderObject = CrossChainOrder.fromDataAndExtension(order.inner.inner, order.inner.extension);
+        } else if (order.inner) {
+            console.log("Trying with order.inner");
+            orderObject = CrossChainOrder.fromDataAndExtension(order.inner, order.extension);
+        } else {
+            console.log("Trying with order directly");
+            orderObject = CrossChainOrder.fromDataAndExtension(order, order.extension);
+        }
+    } catch (error: unknown) {
+        console.log("Failed to reconstruct CrossChainOrder:", error instanceof Error ? error.message : String(error));
+        console.log("Creating fallback object...");
     }
     
     console.log("Order structure:", orderObject);
     console.log("Order extension:", orderObject?.extension);
+    console.log("Taking amount:", orderObject?.takingAmount);
+    console.log("Making amount:", orderObject?.makingAmount);
+    
     const fillAmount = orderObject?.makingAmount;
     const { txHash: orderFillHash, blockHash: srcDeployBlock } =
     await srcChainResolver.send(
         resolverContract.deploySrc(
         swapState.fromChain,
-        orderObject, // Use the order data directly
+        orderObject as CrossChainOrder, // Type assertion to avoid complex typing
         signature,
         TakerTraits.default()
             .setExtension(orderObject!.extension)
@@ -73,8 +87,8 @@ export async function POST(request: Request) {
 
     console.log("Deploying dst escrow...");
     const dstChainResolver = getChainResolver(swapState.toChain);
-    const { txHash: dstDepositHash, blockTimestamp: dstDeployedAt } =
-    await dstChainResolver.send(resolverContract.deployDst(dstImmutables));
+    const { txHash: dstDepositHash } =
+    await dstChainResolver.send(resolverContract.deployDst(dstImmutables as Immutables));
     console.log("Dst escrow deployed", dstDepositHash);
     return NextResponse.json(orderData);
 }

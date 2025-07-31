@@ -5,12 +5,6 @@ import { EscrowFactory } from "../order/escrow";
 import { Wallet } from "../order/wallet";
 dotenv.config();
 
-const config = {
-    src: {
-        ResolverPrivateKey: process.env.SRC_RESOLVER_PRIVATE_KEY,
-        RpcUrl: process.env.SRC_RPC_URL,
-    },
-};
 export const ChainIds = {
   Sepolia: 11155111,
   BaseSepolia: 84532,

@@ -1,17 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { ArrowsUpDownIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
+import { useEffect, useState } from "react";
+import { formatUnits, parseUnits } from "viem";
 import {
   useAccount,
   useBalance,
-  useSwitchChain,
-  useWriteContract,
   useReadContract,
   useSignTypedData,
+  useSwitchChain,
+  useWriteContract,
 } from "wagmi";
-import { sepolia, baseSepolia } from "wagmi/chains";
-import { formatUnits, parseUnits } from "viem";
-import { ChevronDownIcon, ArrowsUpDownIcon } from "@heroicons/react/24/outline";
+import { baseSepolia, sepolia } from "wagmi/chains";
 import { createOrder } from "../logic/swap";
 
 // Mock token data - replace with actual token lists
@@ -227,6 +227,8 @@ export default function SwapComponent() {
       // Switch to source chain if needed and wait for confirmation
       await switchChain({ chainId: swapState.fromChain });
       console.log("Switched to source chain");
+      // Add a small delay to ensure the chain switch is complete
+      await new Promise(resolve => setTimeout(resolve, 1000));
       const secret =
         "0x0000000000000000000000000000000000000000000000000000000000000000";
       const orderData = await createOrder(
@@ -240,9 +242,7 @@ export default function SwapComponent() {
         swapState.toChain
       );
 
-      // Add a small delay to ensure the chain switch is complete
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
+      const orderTypedData = orderData.order.getTypedData(swapState.fromChain);
       const signature = await signTypedDataAsync({
         domain: {
           name: "1inch Limit Order Protocol",
@@ -250,12 +250,13 @@ export default function SwapComponent() {
           chainId: swapState.fromChain,
           verifyingContract: "0x32a209c3736c5bd52e395eabc86b9bca4f602985",
         },
-        types: orderData.orderTypedData.types,
-        primaryType: orderData.orderTypedData.primaryType,
-        message: orderData.orderTypedData.message,
+
+        types: orderTypedData.types,
+        primaryType: orderTypedData.primaryType,
+        message: orderTypedData.message,
       });
-      console.log("Order:", orderData.orderTypedData);
-      console.log("Signature:", signature);
+
+      console.log("Order:", orderData.order);
 
       // Send order and signature to API
       try {
@@ -264,10 +265,14 @@ export default function SwapComponent() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            order: orderData.orderTypedData,
-            signature: signature,
-          }),
+          body: JSON.stringify(
+            {
+              order: orderData.order,
+              swapState: swapState,
+              signature: signature,
+            },
+            (key, value) => (typeof value === "bigint" ? value.toString() : value)
+          ),
         });
 
         if (!response.ok) {

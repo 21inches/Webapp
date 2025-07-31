@@ -18,7 +18,7 @@ export const createOrder = async (
   secret: string,
   srcChainId: number,
   dstChainId: number
-): Promise<{ orderTypedData: EIP712TypedData; secret: string }> => {
+): Promise<{ order: CrossChainOrder; secret: string }> => {
   const escrowFactoryAddress = ChainConfigs[srcChainId].EscrowFactory;
   const srcTimestamp = BigInt(Math.floor(Date.now() / 1000));
   const order = CrossChainOrder.new(
@@ -70,14 +70,13 @@ export const createOrder = async (
       allowMultipleFills: false,
     }
   );
-  const orderTypedData = order.getTypedData(srcChainId);
   const domain = {
     name: "1inch Limit Order Protocol",
     version: "4",
     chainId: srcChainId,
     verifyingContract: ChainConfigs[srcChainId].EscrowFactory,
   };
-  return { orderTypedData, secret };
+  return { order, secret };
 };
 
 // async signOrder(srcChainId, order) {

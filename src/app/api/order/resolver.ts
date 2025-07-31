@@ -1,6 +1,35 @@
 import * as Sdk from "@1inch/cross-chain-sdk";
-import { Interface, Signature, TypedDataEncoder } from "ethers";
+import { Interface, Signature } from "ethers";
 import ResolverABI from "./abi/Resolver.json";
+
+export const deploySrcCallData = (
+  srcAddress: string,
+  signature: string, 
+  immutables: Sdk.ImmutablesData,
+  takerTraits: any, 
+  amount: bigint, 
+  orderHash: string, 
+  hashLock: Sdk.HashLock,
+  orderBuild: any,
+  srcSafetyDeposit: bigint
+) => {
+    const { r, yParityAndS: vs } = Signature.from(signature);
+    const { args, trait } = takerTraits;
+    immutables.orderHash = orderHash;
+    return {
+      to: srcAddress,
+      data: new Interface(RESOLVER_ABI).encodeFunctionData("deploySrc", [
+        immutables,
+        orderBuild,
+        r,
+        vs,
+        amount,
+        trait,
+        args,
+      ]),
+      value: srcSafetyDeposit,
+    };
+};
 
 // Use the actual Resolver ABI from the JSON file
 const RESOLVER_ABI = ResolverABI.abi;
@@ -22,60 +51,7 @@ class Resolver {
     this.dstAddress = dstAddress;
     this.iface = new Interface(RESOLVER_ABI);
   }
-
-  deploySrc(
-    chainId: number,
-    order: Sdk.CrossChainOrder, // Use SDK CrossChainOrder type
-    signature: string,
-    takerTraits: Sdk.TakerTraits, // Use SDK TakerTraits type
-    amount: bigint,
-    hashLock: Sdk.HashLock = order.escrowExtension.hashLockInfo
-  ): TransactionData {
-    // Parse signature using ethers
-    const { r, yParityAndS: vs } = Signature.from(signature);
-
-    const { args, trait } = takerTraits.encode();
-    const immutables = order
-      .toSrcImmutables(
-        chainId,
-        new Sdk.Address(this.srcAddress),
-        amount,
-        hashLock
-      )
-      .build();
-    const hash = this.hashOrder(chainId, order);
-    immutables.orderHash = hash;
-
-    return {
-      to: this.srcAddress,
-      data: this.iface.encodeFunctionData("deploySrc", [
-        immutables,
-        order.build(),
-        r,
-        vs,
-        amount,
-        trait,
-        args,
-      ]),
-      value: order.escrowExtension.srcSafetyDeposit,
-    };
-  }
-
-  hashOrder(srcChainId: number, order: Sdk.CrossChainOrder): string {
-    const typedData = order.getTypedData(srcChainId);
-    const domain = {
-      name: "1inch Limit Order Protocol",
-      version: "4",
-      chainId: srcChainId,
-      verifyingContract: "0x32a209c3736c5bd52e395eabc86b9bca4f602985",
-    };
-    return TypedDataEncoder.hash(
-      domain,
-      { Order: typedData.types[typedData.primaryType] },
-      typedData.message
-    );
-  }
-
+  
   deployDst(immutables: Sdk.Immutables): TransactionData {
     return {
       to: this.dstAddress,

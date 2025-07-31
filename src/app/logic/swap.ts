@@ -1,14 +1,12 @@
-"use client";
-import { ChainConfigs } from "../constants/contracts";
 import {
   Address,
   AuctionDetails,
   CrossChainOrder,
-  EIP712TypedData,
   HashLock,
   randBigInt,
-  TimeLocks,
+  TimeLocks
 } from "@1inch/cross-chain-sdk";
+import { ChainConfigs } from "../constants/contracts";
 export const createOrder = async (
   srcChainUserAddress: string,
   makingAmount: string,
@@ -18,7 +16,7 @@ export const createOrder = async (
   secret: string,
   srcChainId: number,
   dstChainId: number
-): Promise<{ order: CrossChainOrder; secret: string }> => {
+): Promise<{ order: CrossChainOrder; orderdata: any; secret: string }> => {
   const escrowFactoryAddress = ChainConfigs[srcChainId].EscrowFactory;
   const srcTimestamp = BigInt(Math.floor(Date.now() / 1000));
   const order = CrossChainOrder.new(
@@ -70,27 +68,18 @@ export const createOrder = async (
       allowMultipleFills: false,
     }
   );
-  const domain = {
-    name: "1inch Limit Order Protocol",
-    version: "4",
-    chainId: srcChainId,
-    verifyingContract: ChainConfigs[srcChainId].EscrowFactory,
-  };
-  return { order, secret };
+  const orderTypedData = order.getTypedData(srcChainId);
+  const orderdata = {
+    domain: {
+      name: "1inch Limit Order Protocol",
+      version: "4",
+      chainId: srcChainId,
+      verifyingContract: ChainConfigs[srcChainId].LOP,
+    },
+
+    types: orderTypedData.types,
+    primaryType: orderTypedData.primaryType,
+    message: orderTypedData.message,
+  }
+  return { order, orderdata, secret };
 };
-
-// async signOrder(srcChainId, order) {
-//     const typedData = order.getTypedData(srcChainId);
-//     const domain = {
-//       name: "1inch Limit Order Protocol",
-//       version: "4",
-//       chainId: srcChainId,
-//       verifyingContract: "0x32a209c3736c5bd52e395eabc86b9bca4f602985",
-//     };
-
-//     return this.signer.signTypedData(
-//       domain,
-//       { Order: typedData.types[typedData.primaryType] },
-//       typedData.message
-//     );
-//   }

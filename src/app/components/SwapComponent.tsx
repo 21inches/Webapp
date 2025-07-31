@@ -1,8 +1,9 @@
 "use client";
 
+import { Address, AmountMode, TakerTraits } from "@1inch/cross-chain-sdk";
 import { ArrowsUpDownIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { useEffect, useState } from "react";
-import { formatUnits, parseUnits } from "viem";
+import { formatUnits, hashTypedData, parseUnits } from "viem";
 import {
   useAccount,
   useBalance,
@@ -12,6 +13,7 @@ import {
   useWriteContract,
 } from "wagmi";
 import { baseSepolia, sepolia } from "wagmi/chains";
+import { ChainConfigs } from "../constants/contracts";
 import { createOrder } from "../logic/swap";
 
 // Mock token data - replace with actual token lists
@@ -231,7 +233,7 @@ export default function SwapComponent() {
       await new Promise(resolve => setTimeout(resolve, 1000));
       const secret =
         "0x0000000000000000000000000000000000000000000000000000000000000000";
-      const orderData = await createOrder(
+      const order = await createOrder(
         address!,
         swapState.fromAmount,
         swapState.toAmount,
@@ -242,34 +244,43 @@ export default function SwapComponent() {
         swapState.toChain
       );
 
-      const orderTypedData = orderData.order.getTypedData(swapState.fromChain);
-      const signature = await signTypedDataAsync({
-        domain: {
-          name: "1inch Limit Order Protocol",
-          version: "4",
-          chainId: swapState.fromChain,
-          verifyingContract: "0x32a209c3736c5bd52e395eabc86b9bca4f602985",
-        },
+      console.log("Data:", order);
+      const signature = await signTypedDataAsync(order.orderdata as any);
 
-        types: orderTypedData.types,
-        primaryType: orderTypedData.primaryType,
-        message: orderTypedData.message,
-      });
-
-      console.log("Order:", orderData.order);
-
+      console.log("Order:", order.order);
       // Send order and signature to API
       try {
+        const immutables = order.order.toSrcImmutables(
+          swapState.fromChain,
+          new Address(ChainConfigs[swapState.fromChain].ResolverContractAddress),
+          order.order.makingAmount,
+          order.order.escrowExtension.hashLockInfo
+        ).build()
+        const hashLock = order.order.escrowExtension.hashLockInfo
+        const orderHash = hashTypedData(order.orderdata as any)
+        const orderBuild = order.order.build()
+        const takerTraits = TakerTraits.default()
+          .setExtension(order.order.extension)
+          .setAmountMode(AmountMode.maker)
+          .setAmountThreshold(order.order.takingAmount).encode()
+        const srcSafetyDeposit = BigInt(order.order.escrowExtension.srcSafetyDeposit)
         const response = await fetch("/api/order", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
+
           body: JSON.stringify(
             {
-              order: orderData.order,
+              order: order.order,
               swapState: swapState,
               signature: signature,
+              immutables: immutables,
+              hashLock: hashLock,
+              orderHash: orderHash,
+              orderBuild: orderBuild,
+              takerTraits: takerTraits,
+              srcSafetyDeposit: srcSafetyDeposit
             },
             (key, value) => (typeof value === "bigint" ? value.toString() : value)
           ),

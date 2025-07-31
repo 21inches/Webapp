@@ -1,20 +1,23 @@
 import {
     Address,
-    AmountMode,
-    CrossChainOrder,
-    Immutables,
-    TakerTraits
+    Immutables
 } from "@1inch/cross-chain-sdk";
 import { NextResponse } from "next/server";
 import { ChainConfigs, getChainResolver, getSrcEscrowFactory } from "../constants/contracts";
-import { Resolver } from "./resolver";
+import { deploySrcCallData, Resolver } from "./resolver";
 
 export async function POST(request: Request) {
-    const { order, swapState, signature } = await request.json();
-    const orderData = {
+    const { order, swapState, signature,immutables,hashLock,orderHash,orderBuild,takerTraits,srcSafetyDeposit} = await request.json();
+    const req = {
         order: order,
         swapState: swapState,
         signature: signature,
+        immutables: immutables,
+        hashLock: hashLock,
+        orderHash: orderHash,
+        orderBuild: orderBuild,
+        takerTraits: takerTraits,
+        srcSafetyDeposit: srcSafetyDeposit
     };
     
     console.log("Filling order...");
@@ -28,47 +31,11 @@ export async function POST(request: Request) {
     // The order data should contain the necessary properties
     const srcChainResolver = getChainResolver(swapState.fromChain);
     
-    // Debug the order structure
-    console.log("Order keys:", Object.keys(order));
-    console.log("Order.inner keys:", order.inner ? Object.keys(order.inner) : "No inner");
-    console.log("Order.inner.inner keys:", order.inner?.inner ? Object.keys(order.inner.inner) : "No inner.inner");
-    
-    let orderObject;
-    try {
-        // Try different approaches to reconstruct the CrossChainOrder
-        if (order.inner?.inner) {
-            console.log("Trying with order.inner.inner");
-            orderObject = CrossChainOrder.fromDataAndExtension(order.inner.inner, order.inner.extension);
-        } else if (order.inner) {
-            console.log("Trying with order.inner");
-            orderObject = CrossChainOrder.fromDataAndExtension(order.inner, order.extension);
-        } else {
-            console.log("Trying with order directly");
-            orderObject = CrossChainOrder.fromDataAndExtension(order, order.extension);
-        }
-    } catch (error: unknown) {
-        console.log("Failed to reconstruct CrossChainOrder:", error instanceof Error ? error.message : String(error));
-        console.log("Creating fallback object...");
-    }
-    
-    console.log("Order structure:", orderObject);
-    console.log("Order extension:", orderObject?.extension);
-    console.log("Taking amount:", orderObject?.takingAmount);
-    console.log("Making amount:", orderObject?.makingAmount);
-    
-    const fillAmount = orderObject?.makingAmount;
+    const fillAmount = order.inner.inner.makingAmount;
     const { txHash: orderFillHash, blockHash: srcDeployBlock } =
     await srcChainResolver.send(
-        resolverContract.deploySrc(
-        swapState.fromChain,
-        orderObject as CrossChainOrder, // Type assertion to avoid complex typing
-        signature,
-        TakerTraits.default()
-            .setExtension(orderObject!.extension)
-            .setAmountMode(AmountMode.maker)
-            .setAmountThreshold(BigInt(orderObject!.takingAmount)),
-        fillAmount!,
-        )
+        deploySrcCallData(ChainConfigs[swapState.fromChain].ResolverContractAddress, 
+            signature, immutables, takerTraits, fillAmount, orderHash, hashLock,orderBuild, srcSafetyDeposit)
     );
     console.log("Order filled", orderFillHash);
 
@@ -77,9 +44,9 @@ export async function POST(request: Request) {
     const srcEscrowEvent = await srcEscrowFactory.getSrcDeployEvent(
         srcDeployBlock
     );
-    const [immutables, complement] = srcEscrowEvent;
+    const [immutables2, complement] = srcEscrowEvent;
     const dstImmutables = {
-        ...immutables,
+        ...immutables2,
         ...complement,
         taker: new Address(resolverContract.dstAddress)
     };
@@ -90,5 +57,5 @@ export async function POST(request: Request) {
     const { txHash: dstDepositHash } =
     await dstChainResolver.send(resolverContract.deployDst(dstImmutables as Immutables));
     console.log("Dst escrow deployed", dstDepositHash);
-    return NextResponse.json(orderData);
+    return NextResponse.json(req);
 }

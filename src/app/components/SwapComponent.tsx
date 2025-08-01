@@ -1,19 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Address, AmountMode, TakerTraits } from "@1inch/cross-chain-sdk";
+import { ArrowsUpDownIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
+import { useEffect, useState } from "react";
+import { formatUnits, hashTypedData, parseUnits } from "viem";
 import {
   useAccount,
   useBalance,
-  useSwitchChain,
-  useWriteContract,
   useReadContract,
   useSignTypedData,
+  useSwitchChain,
+  useWriteContract
 } from "wagmi";
-import { sepolia, baseSepolia } from "wagmi/chains";
-import { formatUnits, parseUnits } from "viem";
-import { ChevronDownIcon, ArrowsUpDownIcon } from "@heroicons/react/24/outline";
+import { baseSepolia, sepolia } from "wagmi/chains";
+import { ChainConfigs } from "../constants/contracts";
 import { createOrder } from "../logic/swap";
-
 
 // Mock token data - replace with actual token lists
 const TOKENS: Record<number, Token[]> = {
@@ -77,7 +78,7 @@ interface SwapState {
 
 export default function SwapComponent() {
   const { address, isConnected } = useAccount();
-  const { signTypedData, signTypedDataAsync } = useSignTypedData()
+  const {  signTypedDataAsync } = useSignTypedData();
   const { switchChain } = useSwitchChain();
   const { writeContract } = useWriteContract();
 
@@ -161,7 +162,7 @@ export default function SwapComponent() {
       await switchChain({ chainId: swapState.fromChain });
 
       // Add a small delay to ensure the chain switch is complete
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Approve the exact amount the user wants to swap
       const amountToApprove = parseUnits(
@@ -201,7 +202,7 @@ export default function SwapComponent() {
   useEffect(() => {
     if (swapState.fromAmount && !isNaN(Number(swapState.fromAmount))) {
       // Simple 1:1 conversion for demo - replace with actual rates
-      setSwapState((prev) => ({
+      setSwapState(prev => ({
         ...prev,
         toAmount: prev.fromAmount,
       }));
@@ -209,7 +210,7 @@ export default function SwapComponent() {
   }, [swapState.fromAmount]);
 
   const handleSwapDirection = () => {
-    setSwapState((prev) => ({
+    setSwapState(prev => ({
       ...prev,
       fromChain: prev.toChain,
       toChain: prev.fromChain,
@@ -228,32 +229,109 @@ export default function SwapComponent() {
       // Switch to source chain if needed and wait for confirmation
       await switchChain({ chainId: swapState.fromChain });
       console.log("Switched to source chain");
-      const secret = "0x0000000000000000000000000000000000000000000000000000000000000000"
-      const orderData = await createOrder(address!, swapState.fromAmount, swapState.toAmount, swapState.fromToken.address, swapState.toToken.address, secret, swapState.fromChain, swapState.toChain);
-
       // Add a small delay to ensure the chain switch is complete
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const secret =
+        "0x0000000000000000000000000000000000000000000000000000000000000000";
+      const order = await createOrder(
+        address!,
+        swapState.fromAmount,
+        swapState.toAmount,
+        swapState.fromToken.address,
+        swapState.toToken.address,
+        secret,
+        swapState.fromChain,
+        swapState.toChain
+      );
 
-      const signature = await signTypedDataAsync({
-        domain: {
-          name: "1inch Limit Order Protocol",
-          version: "4",
-          chainId: swapState.fromChain,
-          verifyingContract: "0x32a209c3736c5bd52e395eabc86b9bca4f602985",
-        },
-        types: orderData.orderTypedData.types,
-        primaryType: orderData.orderTypedData.primaryType,
-        message: orderData.orderTypedData.message,
-      })
-      console.log("Order:", orderData.orderTypedData);
-      console.log("Signature:", signature);
-//       typedData.message
-      // Here you would implement the actual swap logic
-      // This could involve:
-      // 1. Approving tokens if needed
-      // 2. Calling bridge contract
-      // 3. Waiting for confirmation
+      console.log("Data:", order);
+      const signature = await signTypedDataAsync(order.orderdata);
 
+      console.log("Order:", order.order);
+      let res: Response;
+      let resultBody: Record<string, unknown>;
+      // Send order and signature to API
+      try {
+        const immutables = order.order.toSrcImmutables(
+          swapState.fromChain,
+          new Address(ChainConfigs[swapState.fromChain].ResolverContractAddress),
+          order.order.makingAmount,
+          order.order.escrowExtension.hashLockInfo
+        ).build()
+        const hashLock = order.order.escrowExtension.hashLockInfo
+        const orderHash = hashTypedData(order.orderdata as { domain: Record<string, unknown>; types: Record<string, unknown>; primaryType: string; message: Record<string, unknown> })
+        const orderBuild = order.order.build()
+        const takerTraits = TakerTraits.default()
+          .setExtension(order.order.extension)
+          .setAmountMode(AmountMode.maker)
+          .setAmountThreshold(order.order.takingAmount).encode()
+        const srcSafetyDeposit = BigInt(order.order.escrowExtension.srcSafetyDeposit)
+        res = await fetch("/api/order", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify(
+            {
+              order: order.order,
+              swapState: swapState,
+              signature: signature,
+              immutables: immutables,
+              hashLock: hashLock,
+              orderHash: orderHash,
+              orderBuild: orderBuild,
+              takerTraits: takerTraits,
+              srcSafetyDeposit: srcSafetyDeposit
+            },
+            (key, value) => (typeof value === "bigint" ? value.toString() : value)
+          ),
+        });
+
+        if (!res.ok) {
+          throw new Error(`API call failed: ${res.status}`);
+        }
+
+        const responseText = await res.text();
+        console.log("Raw response text:", responseText);
+        
+        resultBody = JSON.parse(responseText) as Record<string, unknown>;
+        console.log("API response:", resultBody);
+        console.log("Result srcEscrowEvents", resultBody.srcEscrowEvent);
+        console.log("Result dstDeployedAt", resultBody.dstDeployedAt);
+        console.log("Result keys:", Object.keys(resultBody));
+        console.log("Result type:", typeof resultBody);
+        
+        // Ensure resultBody is an object, not a string
+        const responseData = typeof resultBody === 'string' ? JSON.parse(resultBody) : resultBody;
+        console.log("Parsed response data:", responseData);
+        
+        await fetch("/api/order/secret-reveal", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify(
+            {
+              order: order.order,
+              swapState: swapState,
+              signature: signature,
+              secret: secret,
+              srcEscrowEvent: responseData.srcEscrowEvent,
+              dstDeployedAt: responseData.dstDeployedAt,
+              dstImmutablesData: responseData.dstImmutablesData,
+              dstImmutablesHash: responseData.dstImmutablesHash,
+              srcImmutablesHash: responseData.srcImmutablesHash,
+              srcImmutablesData: responseData.srcImmutablesData
+            },
+            (key, value) => (typeof value === "bigint" ? value.toString() : value)
+          ),
+        });
+      } catch (apiError) {
+        console.error("API call failed:", apiError);
+        throw apiError;
+      }
       console.log("Swap initiated:", swapState);
     } catch (error) {
       console.error("Swap failed:", error);
@@ -279,7 +357,7 @@ export default function SwapComponent() {
     <div className="w-md mx-auto bg-white dyesark:bg-gray-800 rounded-2xl shadow-xl p-6 border border-gray-200 dark:border-gray-700">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Bridge Assets
+          Exchange Assets
         </h2>
         <div className="flex items-center space-x-2">
           <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -310,18 +388,18 @@ export default function SwapComponent() {
               >
                 <div className="w-6 h-6 bg-gray-300 rounded-full"></div>
                 <span className="text-sm font-medium">
-                  {CHAINS.find((c) => c.id === swapState.fromChain)?.name}
+                  {CHAINS.find(c => c.id === swapState.fromChain)?.name}
                 </span>
                 <ChevronDownIcon className="w-4 h-4" />
               </button>
 
               {showFromChainList && (
                 <div className="absolute top-full left-0 mt-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-10 min-w-full">
-                  {CHAINS.map((chain) => (
+                  {CHAINS.map(chain => (
                     <button
                       key={chain.id}
                       onClick={() => {
-                        setSwapState((prev) => ({
+                        setSwapState(prev => ({
                           ...prev,
                           fromChain: chain.id,
                           fromToken: TOKENS[chain.id][0],
@@ -353,11 +431,11 @@ export default function SwapComponent() {
 
               {showFromTokenList && (
                 <div className="absolute top-full right-0 mt-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-10 min-w-full">
-                  {TOKENS[swapState.fromChain]?.map((token) => (
+                  {TOKENS[swapState.fromChain]?.map(token => (
                     <button
                       key={token.address}
                       onClick={() => {
-                        setSwapState((prev) => ({ ...prev, fromToken: token }));
+                        setSwapState(prev => ({ ...prev, fromToken: token }));
                         setShowFromTokenList(false);
                       }}
                       className="w-full flex items-center space-x-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
@@ -381,8 +459,8 @@ export default function SwapComponent() {
           <input
             type="number"
             value={swapState.fromAmount}
-            onChange={(e) =>
-              setSwapState((prev) => ({ ...prev, fromAmount: e.target.value }))
+            onChange={e =>
+              setSwapState(prev => ({ ...prev, fromAmount: e.target.value }))
             }
             placeholder="0.0"
             className="w-full text-2xl font-semibold bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder-gray-400"
@@ -421,19 +499,19 @@ export default function SwapComponent() {
               >
                 <div className="w-6 h-6 bg-gray-300 rounded-full"></div>
                 <span className="text-sm font-medium">
-                  {CHAINS.find((c) => c.id === swapState.toChain)?.name}
+                  {CHAINS.find(c => c.id === swapState.toChain)?.name}
                 </span>
                 <ChevronDownIcon className="w-4 h-4" />
               </button>
 
               {showToChainList && (
                 <div className="absolute top-full left-0 mt-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-10 min-w-full">
-                  {CHAINS.filter((c) => c.id !== swapState.fromChain).map(
-                    (chain) => (
+                  {CHAINS.filter(c => c.id !== swapState.fromChain).map(
+                    chain => (
                       <button
                         key={chain.id}
                         onClick={() => {
-                          setSwapState((prev) => ({
+                          setSwapState(prev => ({
                             ...prev,
                             toChain: chain.id,
                             toToken: TOKENS[chain.id][0],
@@ -466,11 +544,11 @@ export default function SwapComponent() {
 
               {showToTokenList && (
                 <div className="absolute top-full right-0 mt-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-10 min-w-full">
-                  {TOKENS[swapState.toChain]?.map((token) => (
+                  {TOKENS[swapState.toChain]?.map(token => (
                     <button
                       key={token.address}
                       onClick={() => {
-                        setSwapState((prev) => ({ ...prev, toToken: token }));
+                        setSwapState(prev => ({ ...prev, toToken: token }));
                         setShowToTokenList(false);
                       }}
                       className="w-full flex items-center space-x-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
@@ -497,10 +575,10 @@ export default function SwapComponent() {
         </div>
       </div>
 
-      {/* Bridge Info */}
+      {/* Exchange Info */}
       <div className="mb-6 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
         <div className="flex justify-between text-sm">
-          <span className="text-blue-700 dark:text-blue-300">Bridge Fee:</span>
+          <span className="text-blue-700 dark:text-blue-300">Exchange Fee:</span>
           <span className="text-blue-700 dark:text-blue-300">~0.001 ETH</span>
         </div>
         <div className="flex justify-between text-sm mt-1">
@@ -546,7 +624,7 @@ export default function SwapComponent() {
         </div>
       )}
 
-      {/* Swap Button */}
+      {/* Exchange Button */}
       <button
         onClick={handleSwap}
         disabled={
@@ -557,10 +635,10 @@ export default function SwapComponent() {
         {!isConnected
           ? "Connect Wallet"
           : needsApproval()
-          ? "Approval Required First"
-          : isLoading
-          ? "Bridging..."
-          : "Bridge Assets"}
+            ? "Approval Required First"
+            : isLoading
+              ? "Exchanging..."
+              : "Exchange Assets"}
       </button>
 
       {/* Transaction Status */}
@@ -569,7 +647,7 @@ export default function SwapComponent() {
           <div className="flex items-center space-x-2">
             <div className="w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
             <span className="text-sm text-yellow-700 dark:text-yellow-300">
-              Processing bridge transaction...
+              Processing exchange transaction...
             </span>
           </div>
         </div>

@@ -9,17 +9,6 @@ import { deploySrcCallData, Resolver } from "./resolver";
 
 export async function POST(request: Request) {
     const { order, swapState, signature,immutables,hashLock,orderHash,orderBuild,takerTraits,srcSafetyDeposit} = await request.json();
-    const req = {
-        order: order,
-        swapState: swapState,
-        signature: signature,
-        immutables: immutables,
-        hashLock: hashLock,
-        orderHash: orderHash,
-        orderBuild: orderBuild,
-        takerTraits: takerTraits,
-        srcSafetyDeposit: srcSafetyDeposit
-    };
     
     console.log("Filling order...");
     
@@ -46,7 +35,6 @@ export async function POST(request: Request) {
         srcDeployBlock
     );
     console.log("Src escrow event fetched", srcEscrowEvent);
-    const [immutables2, complement] = srcEscrowEvent;
     const dstImmutables = (srcEscrowEvent[0] as Immutables)
     .withComplement(srcEscrowEvent[1])
     .withTaker(new Address(resolverContract.dstAddress));

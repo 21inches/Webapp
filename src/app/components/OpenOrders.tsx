@@ -7,16 +7,16 @@ import { useAccount } from 'wagmi';
 
 interface OrderDetails {
   id: string;
-  order: any;
+  order: unknown;
   secret: string;
-  swapState: any;
+  swapState: unknown;
   signature: string;
   status: 'pending' | 'completed' | 'failed';
   createdAt: string;
   fromChain: number;
   toChain: number;
-  fromToken: any;
-  toToken: any;
+  fromToken: unknown;
+  toToken: unknown;
   fromAmount: string;
   toAmount: string;
   orderHash: string;
@@ -185,7 +185,7 @@ export default function OpenOrders() {
                       {getChainName(order.fromChain)}
                     </p>
                     <p className="font-medium text-sm">
-                      {formatAmount(order.fromAmount)} {order.fromToken.symbol}
+                      {formatAmount(order.fromAmount)} {(order.fromToken as { symbol: string }).symbol}
                     </p>
                   </div>
                 </div>
@@ -197,7 +197,7 @@ export default function OpenOrders() {
                       {getChainName(order.toChain)}
                     </p>
                     <p className="font-medium text-sm">
-                      {formatAmount(order.toAmount)} {order.toToken.symbol}
+                      {formatAmount(order.toAmount)} {(order.toToken as { symbol: string }).symbol}
                     </p>
                   </div>
                 </div>

@@ -6,29 +6,29 @@ export const deploySrcCallData = (
   srcAddress: string,
   signature: string, 
   immutables: Sdk.ImmutablesData,
-  takerTraits: any, 
+  takerTraits: unknown, 
   amount: bigint, 
   orderHash: string, 
   hashLock: Sdk.HashLock,
-  orderBuild: any,
+  orderBuild: unknown,
   srcSafetyDeposit: bigint
 ) => {
-    const { r, yParityAndS: vs } = Signature.from(signature);
-    const { args, trait } = takerTraits;
-    immutables.orderHash = orderHash;
-    return {
-      to: srcAddress,
-      data: new Interface(RESOLVER_ABI).encodeFunctionData("deploySrc", [
-        immutables,
-        orderBuild,
-        r,
-        vs,
-        amount,
-        trait,
-        args,
-      ]),
-      value: srcSafetyDeposit,
-    };
+  const { r, yParityAndS: vs } = Signature.from(signature);
+  const { args, trait } = takerTraits as { args: unknown; trait: unknown };
+  immutables.orderHash = orderHash;
+  return {
+    to: srcAddress,
+    data: new Interface(RESOLVER_ABI).encodeFunctionData("deploySrc", [
+      immutables,
+      orderBuild,
+      r,
+      vs,
+      amount,
+      trait,
+      args,
+    ]),
+    value: srcSafetyDeposit,
+  };
 };
 
 export const deployDstCallData = (dstAddress: string, immutablesData: Sdk.ImmutablesData, privateCancellation: bigint, safetyDeposit: bigint): TransactionData => {

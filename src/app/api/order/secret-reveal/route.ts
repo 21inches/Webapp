@@ -1,21 +1,18 @@
 import { NextResponse } from "next/server";
 import { ChainConfigs, getChainResolver, getDstEscrowAddress, getSrcEscrowAddress } from "../../constants/contracts";
-import { Resolver, withdrawCallData } from "../resolver";
+import { withdrawCallData } from "../resolver";
 
 export async function POST(request: Request) {
-    const { order, swapState, signature, secret, dstDeployedAt,srcEscrowEvent, dstResolverContractAddress, dstImmutablesData, dstImmutablesHash, srcImmutablesHash,srcImmutablesData } = await request.json();
+    const { swapState, secret, dstImmutablesData,srcImmutablesHash,dstImmutablesHash,srcImmutablesData } = await request.json();
 
-    const srcEscrowAddress = await getSrcEscrowAddress(swapState.fromChain,srcImmutablesHash);
-    const dstEscrowAddress = await getDstEscrowAddress(swapState.toChain,dstImmutablesHash);
+    const srcEscrowAddress = await getSrcEscrowAddress(swapState.fromChain, srcImmutablesHash);
+    const dstEscrowAddress = await getDstEscrowAddress(swapState.toChain, dstImmutablesHash);
+
   console.log("Src escrow address", srcEscrowAddress);
   console.log("Dst escrow address", dstEscrowAddress);
 
   console.log("Withdrawing from dst escrow for user in 20secs...");
   await new Promise((resolve) => setTimeout(resolve, 20000));
-    const resolverContract = new Resolver(
-      ChainConfigs[swapState.fromChain].ResolverContractAddress,
-      ChainConfigs[swapState.toChain].ResolverContractAddress
-  );
   const dstChainResolver = getChainResolver(swapState.toChain);
   const { txHash: dstWithdrawHash } = await dstChainResolver.send(
     withdrawCallData(

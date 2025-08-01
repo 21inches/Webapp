@@ -17,7 +17,7 @@ export const createOrder = async (
   secret: string,
   srcChainId: number,
   dstChainId: number
-): Promise<{ order: CrossChainOrder; orderdata: any; secret: string }> => {
+): Promise<{ order: CrossChainOrder; orderdata: { domain: Record<string, unknown>; types: Record<string, unknown>; primaryType: string; message: Record<string, unknown> }; secret: string }> => {
   const escrowFactoryAddress = ChainConfigs[srcChainId].EscrowFactory;
   const srcTimestamp = BigInt(Math.floor(Date.now() / 1000));
   const order = CrossChainOrder.new(

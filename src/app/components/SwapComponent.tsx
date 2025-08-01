@@ -10,7 +10,7 @@ import {
   useReadContract,
   useSignTypedData,
   useSwitchChain,
-  useWriteContract,
+  useWriteContract
 } from "wagmi";
 import { baseSepolia, sepolia } from "wagmi/chains";
 import { ChainConfigs } from "../constants/contracts";
@@ -78,7 +78,7 @@ interface SwapState {
 
 export default function SwapComponent() {
   const { address, isConnected } = useAccount();
-  const { signTypedData, signTypedDataAsync } = useSignTypedData();
+  const {  signTypedDataAsync } = useSignTypedData();
   const { switchChain } = useSwitchChain();
   const { writeContract } = useWriteContract();
 
@@ -245,11 +245,11 @@ export default function SwapComponent() {
       );
 
       console.log("Data:", order);
-      const signature = await signTypedDataAsync(order.orderdata as any);
+      const signature = await signTypedDataAsync(order.orderdata);
 
       console.log("Order:", order.order);
       let res: Response;
-      let resultBody: any;
+      let resultBody: Record<string, unknown>;
       // Send order and signature to API
       try {
         const immutables = order.order.toSrcImmutables(
@@ -259,7 +259,7 @@ export default function SwapComponent() {
           order.order.escrowExtension.hashLockInfo
         ).build()
         const hashLock = order.order.escrowExtension.hashLockInfo
-        const orderHash = hashTypedData(order.orderdata as any)
+        const orderHash = hashTypedData(order.orderdata as { domain: Record<string, unknown>; types: Record<string, unknown>; primaryType: string; message: Record<string, unknown> })
         const orderBuild = order.order.build()
         const takerTraits = TakerTraits.default()
           .setExtension(order.order.extension)
@@ -295,7 +295,7 @@ export default function SwapComponent() {
         const responseText = await res.text();
         console.log("Raw response text:", responseText);
         
-        resultBody = JSON.parse(responseText);
+        resultBody = JSON.parse(responseText) as Record<string, unknown>;
         console.log("API response:", resultBody);
         console.log("Result srcEscrowEvents", resultBody.srcEscrowEvent);
         console.log("Result dstDeployedAt", resultBody.dstDeployedAt);
@@ -305,13 +305,8 @@ export default function SwapComponent() {
         // Ensure resultBody is an object, not a string
         const responseData = typeof resultBody === 'string' ? JSON.parse(resultBody) : resultBody;
         console.log("Parsed response data:", responseData);
-        // const srcImmutablesHash = order.order.toSrcImmutables(
-        //   swapState.fromChain,
-        //   new Address(ChainConfigs[swapState.fromChain].ResolverContractAddress),
-        //   order.order.makingAmount,
-        //   order.order.escrowExtension.hashLockInfo
-        // ).hash()
-        const response = await fetch("/api/order/secret-reveal", {
+        
+        await fetch("/api/order/secret-reveal", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

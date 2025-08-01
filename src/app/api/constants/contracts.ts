@@ -1,7 +1,8 @@
+import { Address, EscrowFactory } from "@1inch/cross-chain-sdk";
 import dotenv from "dotenv";
 import { JsonRpcProvider } from "ethers";
 import { parseEther } from "viem";
-import { EscrowFactory } from "../order/escrow";
+import { getDestinationImpl, getSourceImpl } from "../order/escrow";
 import { Wallet } from "../order/wallet";
 dotenv.config();
 
@@ -52,10 +53,17 @@ export const getChainResolver = (chainId: number) => {
   )
 };
 
-export const getSrcEscrowFactory = (chainId: number) => {
+export const getSrcEscrowAddress = async (chainId: number,immutablesHash: string) => {
   const chainConfig = ChainConfigs[chainId];
+  const ESCROW_SRC_IMPLEMENTATION = await getSourceImpl(new JsonRpcProvider(chainConfig.RpcUrl), chainConfig.EscrowFactory);
   return new EscrowFactory(
-    new JsonRpcProvider(chainConfig.RpcUrl),
-    chainConfig.EscrowFactory
-  );
+    new Address(chainConfig.EscrowFactory)
+  ).getEscrowAddress(immutablesHash, ESCROW_SRC_IMPLEMENTATION);
+};
+export const getDstEscrowAddress = async (dstChainId: number,immutablesHash: string) => {
+  const chainConfig = ChainConfigs[dstChainId];
+  const ESCROW_DST_IMPLEMENTATION = await getDestinationImpl(new JsonRpcProvider(chainConfig.RpcUrl), chainConfig.EscrowFactory);
+  return new EscrowFactory(
+    new Address(chainConfig.EscrowFactory)
+  ).getEscrowAddress(immutablesHash, ESCROW_DST_IMPLEMENTATION);
 };

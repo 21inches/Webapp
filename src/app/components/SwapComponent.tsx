@@ -248,6 +248,8 @@ export default function SwapComponent() {
       const signature = await signTypedDataAsync(order.orderdata as any);
 
       console.log("Order:", order.order);
+      let res: Response;
+      let resultBody: any;
       // Send order and signature to API
       try {
         const immutables = order.order.toSrcImmutables(
@@ -264,7 +266,7 @@ export default function SwapComponent() {
           .setAmountMode(AmountMode.maker)
           .setAmountThreshold(order.order.takingAmount).encode()
         const srcSafetyDeposit = BigInt(order.order.escrowExtension.srcSafetyDeposit)
-        const response = await fetch("/api/order", {
+        res = await fetch("/api/order", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -286,23 +288,55 @@ export default function SwapComponent() {
           ),
         });
 
-        if (!response.ok) {
-          throw new Error(`API call failed: ${response.status}`);
+        if (!res.ok) {
+          throw new Error(`API call failed: ${res.status}`);
         }
 
-        const result = await response.json();
-        console.log("API response:", result);
+        const responseText = await res.text();
+        console.log("Raw response text:", responseText);
+        
+        resultBody = JSON.parse(responseText);
+        console.log("API response:", resultBody);
+        console.log("Result srcEscrowEvents", resultBody.srcEscrowEvent);
+        console.log("Result dstDeployedAt", resultBody.dstDeployedAt);
+        console.log("Result keys:", Object.keys(resultBody));
+        console.log("Result type:", typeof resultBody);
+        
+        // Ensure resultBody is an object, not a string
+        const responseData = typeof resultBody === 'string' ? JSON.parse(resultBody) : resultBody;
+        console.log("Parsed response data:", responseData);
+        // const srcImmutablesHash = order.order.toSrcImmutables(
+        //   swapState.fromChain,
+        //   new Address(ChainConfigs[swapState.fromChain].ResolverContractAddress),
+        //   order.order.makingAmount,
+        //   order.order.escrowExtension.hashLockInfo
+        // ).hash()
+        const response = await fetch("/api/order/secret-reveal", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify(
+            {
+              order: order.order,
+              swapState: swapState,
+              signature: signature,
+              secret: secret,
+              srcEscrowEvent: responseData.srcEscrowEvent,
+              dstDeployedAt: responseData.dstDeployedAt,
+              dstImmutablesData: responseData.dstImmutablesData,
+              dstImmutablesHash: responseData.dstImmutablesHash,
+              srcImmutablesHash: responseData.srcImmutablesHash,
+              srcImmutablesData: responseData.srcImmutablesData
+            },
+            (key, value) => (typeof value === "bigint" ? value.toString() : value)
+          ),
+        });
       } catch (apiError) {
         console.error("API call failed:", apiError);
         throw apiError;
       }
-
-      // Here you would implement the actual swap logic
-      // This could involve:
-      // 1. Approving tokens if needed
-      // 2. Calling exchange contract
-      // 3. Waiting for confirmation
-
       console.log("Swap initiated:", swapState);
     } catch (error) {
       console.error("Swap failed:", error);

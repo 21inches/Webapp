@@ -41,6 +41,22 @@ export const deployDstCallData = (dstAddress: string, immutablesData: Sdk.Immuta
       value: safetyDeposit,
     };
   }
+export const withdrawCallData = (
+    side: "src" | "dst",
+    escrow: string,
+    secret: string,
+    immutables: Sdk.ImmutablesData,
+    toAddress: string
+  ) => {
+    return {
+      to: toAddress,
+      data: new Interface(RESOLVER_ABI).encodeFunctionData("withdraw", [
+        escrow,
+        secret,
+        immutables,
+      ]),
+    };
+  }
 // Use the actual Resolver ABI from the JSON file
 const RESOLVER_ABI = ResolverABI.abi;
 

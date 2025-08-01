@@ -2,47 +2,36 @@ import { Address, DstImmutablesComplement, HashLock, Immutables, TimeLocks } fro
 import { id, Interface, JsonRpcApiProvider } from "ethers";
 import EscrowFactoryContract from "./abi/EscrowFactory.json";
 
-class EscrowFactory {
-  iface = new Interface(EscrowFactoryContract.abi);
-  provider: JsonRpcApiProvider;
-  address: string;
-
-  constructor(provider: JsonRpcApiProvider, address: string) {
-    this.provider = provider;
-    this.address = address;
-  }
-
-  async getSourceImpl() {
+  export async function getSourceImpl(provider: JsonRpcApiProvider, address: string) {
     return Address.fromBigInt(
       BigInt(
-        await this.provider.call({
-          to: this.address,
+        await provider.call({
+          to: address,
           data: id("ESCROW_SRC_IMPLEMENTATION()").slice(0, 10),
         })
       )
     );
   }
-
-  async getDestinationImpl() {
+  export async function getDestinationImpl(provider: JsonRpcApiProvider, address: string) {
     return Address.fromBigInt(
       BigInt(
-        await this.provider.call({
-          to: this.address,
+        await provider.call({
+          to: address,
           data: id("ESCROW_DST_IMPLEMENTATION()").slice(0, 10),
         })
       )
     );
   }
-
-  async getSrcDeployEvent(blockHash: string) {
-    const event = this.iface.getEvent("SrcEscrowCreated");
-    const logs = await this.provider.getLogs({
+  export async function getSrcDeployEvent(provider: JsonRpcApiProvider, address: string, blockHash: string) {
+    const iEscrowFactory = new Interface(EscrowFactoryContract.abi);
+    const event = iEscrowFactory.getEvent("SrcEscrowCreated");
+    const logs = await provider.getLogs({
       blockHash,
-      address: this.address,
+      address: address,
       topics: [event!.topicHash],
     });
 
-    const [data] = logs.map((l) => this.iface.decodeEventLog(event!, l.data));
+    const [data] = logs.map((l) => iEscrowFactory.decodeEventLog(event!, l.data));
 
     const immutables = data.at(0);
     const complement = data.at(1);
@@ -66,6 +55,3 @@ class EscrowFactory {
       }),
     ];
   }
-}
-
-export { EscrowFactory };

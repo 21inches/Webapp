@@ -3,7 +3,8 @@ import {
     Immutables
 } from "@1inch/cross-chain-sdk";
 import { NextResponse } from "next/server";
-import { ChainConfigs, getChainResolver, getSrcEscrowFactory } from "../constants/contracts";
+import { ChainConfigs, getChainResolver } from "../constants/contracts";
+import { getSrcDeployEvent } from "./escrow";
 import { deploySrcCallData, Resolver } from "./resolver";
 
 export async function POST(request: Request) {
@@ -21,7 +22,6 @@ export async function POST(request: Request) {
     };
     
     console.log("Filling order...");
-    console.log("Received order structure:", JSON.stringify(order, null, 2));
     
     const resolverContract = new Resolver(
         ChainConfigs[swapState.fromChain].ResolverContractAddress,
@@ -40,8 +40,9 @@ export async function POST(request: Request) {
     console.log("Order filled", orderFillHash);
 
     console.log("Fetching src escrow event...");
-    const srcEscrowFactory = getSrcEscrowFactory(swapState.fromChain)
-    const srcEscrowEvent = await srcEscrowFactory.getSrcDeployEvent(
+    const srcEscrowEvent = await getSrcDeployEvent(
+        srcChainResolver.provider,
+        ChainConfigs[swapState.fromChain].EscrowFactory,
         srcDeployBlock
     );
     console.log("Src escrow event fetched", srcEscrowEvent);
@@ -55,9 +56,22 @@ export async function POST(request: Request) {
     console.log("Dst immutables", dstImmutables);
 
     const dstChainResolver = getChainResolver(swapState.toChain);
-    const { txHash: dstDepositHash } =
+    const { txHash: dstDepositHash, blockTimestamp: dstDeployedAt } =
     await dstChainResolver.send(
         resolverContract.deployDst(dstImmutables as Immutables));
     console.log("Dst escrow deployed", dstDepositHash);
-    return NextResponse.json(req);
+    console.log("Dst deployed at", dstDeployedAt);
+    const dstImmutablesData = dstImmutables.withDeployedAt(dstDeployedAt).build()
+    const dstImmutablesHash = dstImmutables.withDeployedAt(dstDeployedAt).hash()
+    const srcImmutablesHash = (srcEscrowEvent[0] as Immutables).hash()
+    const srcImmutablesData = (srcEscrowEvent[0] as Immutables).build()
+    const res = {
+        srcEscrowEvent: srcEscrowEvent,
+        dstDeployedAt: dstDeployedAt,       
+        dstImmutablesData: dstImmutablesData,
+        dstImmutablesHash: dstImmutablesHash,
+        srcImmutablesHash: srcImmutablesHash,
+        srcImmutablesData: srcImmutablesData
+    }
+    return NextResponse.json(JSON.stringify(res,(key, value) => (typeof value === "bigint" ? value.toString() : value)));
 }

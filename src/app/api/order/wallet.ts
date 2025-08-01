@@ -106,7 +106,7 @@ class Wallet {
       gasLimit: 10_000_000,
       from: await this.getAddress(),
     });
-    const receipt = await res.wait(1);
+    const receipt = await res.wait();
 
     if (receipt && receipt.status) {
       return {

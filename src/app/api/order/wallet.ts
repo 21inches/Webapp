@@ -136,7 +136,7 @@ class Wallet {
       return {
         txHash: receipt.hash,
         blockTimestamp: BigInt(block?.timestamp ?? -1),
-        blockHash: res.blockHash!,
+        blockHash: receipt.blockHash!,
       };
     }
 

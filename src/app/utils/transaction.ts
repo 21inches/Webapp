@@ -6,6 +6,10 @@ export const getTransactionLink = (chainId: number, txHash: string): string => {
       return `https://sepolia.etherscan.io/tx/${txHash}`;
     case ChainIds.BaseSepolia:
       return `https://sepolia.basescan.org/tx/${txHash}`;
+    case ChainIds.MonadTestnet:
+      return `http://monad-testnet.socialscan.io/tx/${txHash}`;
+    case ChainIds.EtherlinkTestnet:
+      return `https://testnet.explorer.etherlink.com/tx/${txHash}`;
     default:
       return `https://etherscan.io/tx/${txHash}`;
   }
@@ -20,6 +24,10 @@ export const getBlockExplorerLink = (
       return `https://sepolia.etherscan.io/block/${blockHash}`;
     case ChainIds.BaseSepolia:
       return `https://sepolia.basescan.org/block/${blockHash}`;
+    case ChainIds.MonadTestnet:
+      return `http://monad-testnet.socialscan.io/block/${blockHash}`;
+    case ChainIds.EtherlinkTestnet:
+      return `https://testnet.explorer.etherlink.com/block/${blockHash}`;
     default:
       return `https://etherscan.io/block/${blockHash}`;
   }

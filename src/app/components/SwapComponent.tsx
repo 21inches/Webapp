@@ -228,6 +228,11 @@ export default function SwapComponent() {
       );
 
       console.log("🚀 Submitting order to exchange...");
+
+      // Create AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 30 seconds timeout
+
       const response = await fetch("/api/order", {
         method: "POST",
         headers: {
@@ -247,7 +252,11 @@ export default function SwapComponent() {
           },
           (key, value) => (typeof value === "bigint" ? value.toString() : value)
         ),
+        signal: controller.signal,
       });
+
+      // Clear the timeout since the request completed
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -319,6 +328,13 @@ export default function SwapComponent() {
         "🔄 Order status: PENDING_WITHDRAW (secret revealed, withdrawing)"
       );
 
+      // Create AbortController for secret reveal timeout
+      const secretRevealController = new AbortController();
+      const secretRevealTimeoutId = setTimeout(
+        () => secretRevealController.abort(),
+        60000
+      ); // 30 seconds timeout
+
       const secretRevealResponse = await fetch("/api/order/secret-reveal", {
         method: "POST",
         headers: {
@@ -339,7 +355,11 @@ export default function SwapComponent() {
           },
           (key, value) => (typeof value === "bigint" ? value.toString() : value)
         ),
+        signal: secretRevealController.signal,
       });
+
+      // Clear the timeout since the request completed
+      clearTimeout(secretRevealTimeoutId);
 
       if (!secretRevealResponse.ok) {
         throw new Error(`Secret reveal failed: ${secretRevealResponse.status}`);

@@ -205,7 +205,7 @@ export default function SwapComponent() {
       swapState: swapState,
       fromToken: swapState.fromToken,
       toToken: swapState.toToken,
-      status: "pending" as const,
+      status: "CREATED" as const,
       createdAt: Date.now(),
       transactions: {} as Record<string, unknown>,
       message: ""
@@ -319,6 +319,7 @@ export default function SwapComponent() {
             swapState: swapState,
             signature: signature,
             secret: secret,
+            orderId: resultBody.orderId, // Pass the order ID from the database
             srcEscrowEvent: responseData.srcEscrowEvent,
             dstDeployedAt: responseData.dstDeployedAt,
             dstImmutablesData: responseData.dstImmutablesData,
@@ -347,15 +348,14 @@ export default function SwapComponent() {
       const updatedOrders = JSON.parse(localStorage.getItem("orders") || "[]");
       const orderIndex = updatedOrders.findIndex((o: Record<string, unknown>) => o.id === orderId);
       if (orderIndex !== -1) {
-        updatedOrders[orderIndex].status = "completed";
-        updatedOrders[orderIndex].completedAt = Date.now();
-        updatedOrders[orderIndex].transactions = {
-          ...updatedOrders[orderIndex].transactions,
-          ...secretRevealResult.transactions
-        };
-        updatedOrders[orderIndex].message = secretRevealResult.message;
-        localStorage.setItem("orders", JSON.stringify(updatedOrders));
-        console.log("✅ Order status updated to completed");
+          updatedOrders[orderIndex].status = "COMPLETED";
+          updatedOrders[orderIndex].completedAt = Date.now();
+          updatedOrders[orderIndex].transactions = {
+              ...updatedOrders[orderIndex].transactions,
+              ...secretRevealResult.transactions
+          };
+          updatedOrders[orderIndex].message = secretRevealResult.message;
+          localStorage.setItem("orders", JSON.stringify(updatedOrders));
       }
       
       console.log("✅ Cross-chain exchange process completed!");
@@ -363,14 +363,15 @@ export default function SwapComponent() {
       console.error("❌ Exchange failed:", error);
       
       // Update order status to failed
-      const failedOrders = JSON.parse(localStorage.getItem("orders") || "[]");
-      const orderIndex = failedOrders.findIndex((o: Record<string, unknown>) => o.id === orderId);
-      if (orderIndex !== -1) {
-        failedOrders[orderIndex].status = "failed";
-        failedOrders[orderIndex].failedAt = Date.now();
-        failedOrders[orderIndex].error = error instanceof Error ? error.message : "Unknown error";
-        localStorage.setItem("orders", JSON.stringify(failedOrders));
-        console.log("❌ Order status updated to failed");
+      if (orderDetails?.id) {
+          const failedOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+          const orderIndex = failedOrders.findIndex((o: Record<string, unknown>) => o.id === orderDetails.id);
+          if (orderIndex !== -1) {
+              failedOrders[orderIndex].status = "FAILED";
+              failedOrders[orderIndex].failedAt = Date.now();
+              failedOrders[orderIndex].error = error instanceof Error ? error.message : "Exchange failed";
+              localStorage.setItem("orders", JSON.stringify(failedOrders));
+          }
       }
     } finally {
       setIsLoading(false);

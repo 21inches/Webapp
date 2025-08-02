@@ -1,4 +1,9 @@
-import { baseSepolia, sepolia } from "wagmi/chains";
+import {
+  baseSepolia,
+  etherlinkTestnet,
+  monadTestnet,
+  sepolia,
+} from "wagmi/chains";
 import { type Token } from "../types/order";
 
 // Token configurations
@@ -21,12 +26,32 @@ export const TOKENS: Record<number, Token[]> = {
       logo: "/blt-logo.svg",
     },
   ],
+  [monadTestnet.id]: [
+    {
+      symbol: "BLT",
+      name: "BLT Coin",
+      address: "0x60c13fAcC3d2363fa4c1D4c8A0456a4FeBc98903",
+      decimals: 18,
+      logo: "/blt-logo.svg",
+    },
+  ],
+  [etherlinkTestnet.id]: [
+    {
+      symbol: "BLT",
+      name: "BLT Coin",
+      address: "0xb84b2c6c0d554263Eab9f56DEeA8523347270A11",
+      decimals: 18,
+      logo: "/blt-logo.svg",
+    },
+  ],
 };
 
 // LOP (Liquidity Optimization Protocol) addresses per chain
 export const LOP_ADDRESSES: Record<number, string> = {
   [sepolia.id]: "0x32a209c3736c5bd52e395eabc86b9bca4f602985",
   [baseSepolia.id]: "0xe30f9abbadc1eb84b41d41035b2a2c7d0bd5f9b2",
+  [monadTestnet.id]: "0xFCf9F11666Adb060D03Bb873954673f90914bAdE",
+  [etherlinkTestnet.id]: "0x942DFf5Af350fd0816Bd03C91729633C293dB5dA",
 };
 
 // Helper functions

@@ -24,7 +24,7 @@ export const ChainConfigs = {
       "0x7490329e69ab8e298a32dc59493034e4d02a5ccf",
     TrueERC20: "0x6dFe5DA3C989aB142CfB16a8FfA2B0e640b1d821",
     ChainName: "Sepolia",
-    RpcUrl: "https://sepolia.drpc.org",
+    RpcUrl: "https://ethereum-sepolia-rpc.publicnode.com",
     ResolverPrivateKey: process.env.SEPOLIA_USER_PRIVATE_KEY,
     SafetyDeposit: parseEther("0.001"),
   },
@@ -39,7 +39,7 @@ export const ChainConfigs = {
       "0x0418b6e80a602474fbfadc3a2594413fe68496bb",
     TrueERC20: "0x8bD9f7C82eBF9D9C830a76bAcb0E99A52163B304",
     ChainName: "BaseSepolia",
-    RpcUrl: "https://sepolia.base.org",
+    RpcUrl: "https://base-sepolia-rpc.publicnode.com",
     ResolverPrivateKey: process.env.BASE_SEPOLIA_USER_PRIVATE_KEY,
     SafetyDeposit: parseEther("0.001"),
   },
@@ -79,10 +79,10 @@ export const getChainResolver = (chainId: number) => {
   if (!chainConfig?.ResolverPrivateKey) {
     throw new Error(`No resolver private key found for chain ${chainId}`);
   }
-  return new Wallet(
-    chainConfig.ResolverPrivateKey,
-    new JsonRpcProvider(chainConfig.RpcUrl)
-  );
+  const provider = new JsonRpcProvider(chainConfig.RpcUrl);
+  // Set timeout for the provider
+  provider._getConnection().timeout = 30000; // 30 seconds timeout
+  return new Wallet(chainConfig.ResolverPrivateKey, provider);
 };
 
 export const getSrcEscrowAddress = async (
@@ -90,8 +90,11 @@ export const getSrcEscrowAddress = async (
   immutablesHash: string
 ) => {
   const chainConfig = ChainConfigs[chainId];
+  const provider = new JsonRpcProvider(chainConfig.RpcUrl);
+  // Set timeout for the provider
+  provider._getConnection().timeout = 30000; // 30 seconds timeout
   const ESCROW_SRC_IMPLEMENTATION = await getSourceImpl(
-    new JsonRpcProvider(chainConfig.RpcUrl),
+    provider,
     chainConfig.EscrowFactory
   );
   return new EscrowFactory(
@@ -103,8 +106,15 @@ export const getDstEscrowAddress = async (
   immutablesHash: string
 ) => {
   const chainConfig = ChainConfigs[dstChainId];
+  console.log(
+    "🔍 Fetching destination escrow deployment event...",
+    chainConfig
+  );
+  const provider = new JsonRpcProvider(chainConfig.RpcUrl);
+  // Set timeout for the provider
+  provider._getConnection().timeout = 30000; // 30 seconds timeout
   const ESCROW_DST_IMPLEMENTATION = await getDestinationImpl(
-    new JsonRpcProvider(chainConfig.RpcUrl),
+    provider,
     chainConfig.EscrowFactory
   );
   return new EscrowFactory(

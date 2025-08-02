@@ -205,58 +205,72 @@ export default function OrderCard({ order }: OrderCardProps) {
 
         {order.transactions && Object.keys(order.transactions).length > 0 && (
           <div className="space-y-2">
-            <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-              Transaction Links
-            </h3>
-            <div className="space-y-1">
-              {order.transactions.orderFill && (
-                <a
-                  href={order.transactions.orderFill.txLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-between p-2 bg-white dark:bg-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors"
-                  title="Source Escrow Deploy"
-                >
-                  <span className="text-xs text-gray-600 dark:text-gray-400">Source Escrow Deploy</span>
-                  <ArrowTopRightOnSquareIcon className="w-3 h-3 text-blue-600" />
-                </a>
-              )}
-              {order.transactions.dstEscrowDeploy && (
-                <a
-                  href={order.transactions.dstEscrowDeploy.txLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-between p-2 bg-white dark:bg-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors"
-                  title="Destination Escrow Deploy"
-                >
-                  <span className="text-xs text-gray-600 dark:text-gray-400">Destination Escrow Deploy</span>
-                  <ArrowTopRightOnSquareIcon className="w-3 h-3 text-green-600" />
-                </a>
-              )}
-              {order.transactions.dstWithdraw && (
-                <a
-                  href={order.transactions.dstWithdraw.txLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-between p-2 bg-white dark:bg-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors"
-                  title="Destination Withdrawal"
-                >
-                  <span className="text-xs text-gray-600 dark:text-gray-400">Destination Withdrawal</span>
-                  <ArrowTopRightOnSquareIcon className="w-3 h-3 text-purple-600" />
-                </a>
-              )}
-              {order.transactions.srcWithdraw && (
-                <a
-                  href={order.transactions.srcWithdraw.txLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-between p-2 bg-white dark:bg-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors"
-                  title="Source Withdrawal"
-                >
-                  <span className="text-xs text-gray-600 dark:text-gray-400">Source Withdrawal</span>
-                  <ArrowTopRightOnSquareIcon className="w-3 h-3 text-orange-600" />
-                </a>
-              )}
+            <div className="flex items-center space-x-2">
+              <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                Transaction links:
+              </h3>
+              <div className="flex items-center space-x-2">
+                {order.transactions.orderFill && (
+                  <a
+                    href={order.transactions.orderFill.txLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group relative"
+                    title="Source Escrow Deploy - Order fill transaction on source chain"
+                  >
+                    <ArrowTopRightOnSquareIcon className="w-6 h-6 text-blue-600 hover:text-blue-800 transition-colors" />
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                      Source Escrow Deploy
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                  </a>
+                )}
+                {order.transactions.dstEscrowDeploy && (
+                  <a
+                    href={order.transactions.dstEscrowDeploy.txLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group relative"
+                    title="Destination Escrow Deploy - Escrow contract deployment on destination chain"
+                  >
+                    <ArrowTopRightOnSquareIcon className="w-6 h-6 text-green-600 hover:text-green-800 transition-colors" />
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                      Destination Escrow Deploy
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                  </a>
+                )}
+                {order.transactions.dstWithdraw && (
+                  <a
+                    href={order.transactions.dstWithdraw.txLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group relative"
+                    title="Destination Withdrawal - Final withdrawal of tokens on destination chain"
+                  >
+                    <ArrowTopRightOnSquareIcon className="w-6 h-6 text-purple-600 hover:text-purple-800 transition-colors" />
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                      Destination Withdrawal
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                  </a>
+                )}
+                {order.transactions.srcWithdraw && (
+                  <a
+                    href={order.transactions.srcWithdraw.txLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group relative"
+                    title="Source Withdrawal - Cleanup withdrawal on source chain"
+                  >
+                    <ArrowTopRightOnSquareIcon className="w-6 h-6 text-orange-600 hover:text-orange-800 transition-colors" />
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                      Source Withdrawal
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                  </a>
+                )}
+              </div>
             </div>
           </div>
         )}

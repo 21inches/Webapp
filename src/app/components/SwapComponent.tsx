@@ -500,7 +500,11 @@ export default function SwapComponent() {
                 onClick={() => setShowFromTokenList(!showFromTokenList)}
                 className="flex items-center space-x-2 bg-white dark:bg-gray-600 rounded-lg px-3 py-2 border border-gray-300 dark:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors"
               >
-                <div className="w-6 h-6 bg-gray-300 rounded-full"></div>
+                <img
+                  src={swapState.fromToken.logo}
+                  alt={`${swapState.fromToken.symbol} logo`}
+                  className="w-6 h-6 rounded-full"
+                />
                 <span className="text-sm font-medium">
                   {swapState.fromToken.symbol}
                 </span>
@@ -521,7 +525,11 @@ export default function SwapComponent() {
                       }}
                       className="w-full flex items-center space-x-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
                     >
-                      <div className="w-6 h-6 bg-gray-300 rounded-full"></div>
+                      <img
+                        src={token.logo}
+                        alt={`${token.symbol} logo`}
+                        className="w-6 h-6 rounded-full"
+                      />
                       <span className="text-sm">{token.symbol}</span>
                     </button>
                   ))}
@@ -615,7 +623,11 @@ export default function SwapComponent() {
                 onClick={() => setShowToTokenList(!showToTokenList)}
                 className="flex items-center space-x-2 bg-white dark:bg-gray-600 rounded-lg px-3 py-2 border border-gray-300 dark:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors"
               >
-                <div className="w-6 h-6 bg-gray-300 rounded-full"></div>
+                <img
+                  src={swapState.toToken.logo}
+                  alt={`${swapState.toToken.symbol} logo`}
+                  className="w-6 h-6 rounded-full"
+                />
                 <span className="text-sm font-medium">
                   {swapState.toToken.symbol}
                 </span>
@@ -636,7 +648,11 @@ export default function SwapComponent() {
                       }}
                       className="w-full flex items-center space-x-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
                     >
-                      <div className="w-6 h-6 bg-gray-300 rounded-full"></div>
+                      <img
+                        src={token.logo}
+                        alt={`${token.symbol} logo`}
+                        className="w-6 h-6 rounded-full"
+                      />
                       <span className="text-sm">{token.symbol}</span>
                     </button>
                   ))}

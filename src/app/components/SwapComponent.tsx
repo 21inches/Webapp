@@ -4,83 +4,19 @@ import { Address, AmountMode, TakerTraits } from "@1inch/cross-chain-sdk";
 import { ArrowsUpDownIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { useEffect, useState } from "react";
 import { formatUnits, hashTypedData, parseUnits } from "viem";
-import {
-  useAccount,
-  useBalance,
-  useReadContract,
-  useSignTypedData,
-  useSwitchChain,
-  useWriteContract
-} from "wagmi";
+import { useAccount, useBalance, useReadContract, useSignTypedData, useSwitchChain, useWriteContract } from "wagmi";
 import { baseSepolia, sepolia } from "wagmi/chains";
+import { CHAINS } from "../constants/chains";
 import { ChainConfigs } from "../constants/contracts";
-import { createOrder } from "../logic/swap";
-
-// Mock token data - replace with actual token lists
-const TOKENS: Record<number, Token[]> = {
-  [sepolia.id]: [
-    {
-      symbol: "BLT",
-      name: "BLT Coin",
-      address: "0x0BF8E91b08b242cD7380bC92385C90c8270b37f0",
-      decimals: 18,
-      logo: "/blt-logo.svg",
-    },
-  ],
-  [baseSepolia.id]: [
-    {
-      symbol: "BLT",
-      name: "BLT Coin",
-      address: "0xbb7f72d58f5F7147CBa030Ba4c46a94a07E4c2CA",
-      decimals: 18,
-      logo: "/blt-logo.svg",
-    },
-  ],
-};
-
-// LOP (Liquidity Optimization Protocol) addresses per chain
-const LOP_ADDRESSES: Record<number, string> = {
-  [sepolia.id]: "0x32a209c3736c5bd52e395eabc86b9bca4f602985",
-  [baseSepolia.id]: "0xe30f9abbadc1eb84b41d41035b2a2c7d0bd5f9b2",
-};
-
-const CHAINS = [
-  {
-    id: sepolia.id,
-    name: "Sepolia",
-    logo: "/ethereum-logo.svg",
-    chain: sepolia,
-  },
-  {
-    id: baseSepolia.id,
-    name: "Base Sepolia",
-    logo: "/base-logo.svg",
-    chain: baseSepolia,
-  },
-];
-
-interface Token {
-  symbol: string;
-  name: string;
-  address: string;
-  decimals: number;
-  logo: string;
-}
-
-interface SwapState {
-  fromChain: number;
-  toChain: number;
-  fromToken: Token;
-  toToken: Token;
-  fromAmount: string;
-  toAmount: string;
-}
+import { LOP_ADDRESSES, TOKENS } from "../constants/tokens";
+import { createOrder as createOrderLogic } from "../logic/swap";
+import { type Order, type SwapState } from "../types/order";
 
 export default function SwapComponent() {
   const { address, isConnected } = useAccount();
-  const { signTypedDataAsync } = useSignTypedData();
   const { switchChain } = useSwitchChain();
   const { writeContract } = useWriteContract();
+  const { signTypedDataAsync } = useSignTypedData();
 
   const [swapState, setSwapState] = useState<SwapState>({
     fromChain: sepolia.id,
@@ -200,16 +136,23 @@ export default function SwapComponent() {
     
     // Create order details for storage
     const orderId = Date.now().toString();
-    const orderDetails = {
+    const orderDetails: Order = {
       id: orderId,
       swapState: swapState,
       fromToken: swapState.fromToken,
       toToken: swapState.toToken,
-      status: "pending" as const,
+      message: "Order created and signed",
+      status: "CREATED",
       createdAt: Date.now(),
-      transactions: {} as Record<string, unknown>,
-      message: ""
+      transactions: {},
     };
+    
+    // Save order to localStorage immediately in CREATED state
+    const existingOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+    existingOrders.push(orderDetails);
+    localStorage.setItem("orders", JSON.stringify(existingOrders));
+    console.log("💾 Order created and saved to localStorage with ID:", orderId);
+    console.log("🆕 Order status: CREATED (order created and signed)");
     
     try {
       console.log("🔄 Switching to source chain...");
@@ -222,7 +165,7 @@ export default function SwapComponent() {
       console.log("✅ Switched to source chain successfully");
       
       console.log("📝 Creating order data...");
-      const order = await createOrder(
+      const order = await createOrderLogic(
         address!,
         swapState.fromAmount,
         swapState.toAmount,
@@ -288,12 +231,16 @@ export default function SwapComponent() {
       // Update order with initial transaction data
       orderDetails.transactions = resultBody.transactions || {};
       orderDetails.message = resultBody.message || "Exchange initiated";
+      orderDetails.status = "PENDING_SECRET"; // Update to PENDING_SECRET after escrow deployment
       
-      // Save to localStorage
-      const existingOrders = JSON.parse(localStorage.getItem("orders") || "[]");
-      existingOrders.push(orderDetails);
-      localStorage.setItem("orders", JSON.stringify(existingOrders));
-      console.log("💾 Order saved to local storage with ID:", orderId);
+      // Update existing order in localStorage
+      const pendingSecretOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+      const updatedOrders = pendingSecretOrders.map((o: Order) =>
+        o.id === orderId ? { ...o, status: "PENDING_SECRET", transactions: resultBody.transactions || {}, message: resultBody.message || "Escrow contracts deployed on both chains. Waiting for secret revelation." } : o
+      );
+      localStorage.setItem("orders", JSON.stringify(updatedOrders));
+      console.log("💾 Order updated in localStorage with ID:", orderId);
+      console.log("🔄 Order status: PENDING_SECRET (waiting for secret revelation)");
       
       const responseData = {
         srcEscrowEvent: resultBody.srcEscrowEvent,
@@ -308,6 +255,15 @@ export default function SwapComponent() {
       };
 
       console.log("⏳ Initiating secret revelation phase...");
+      
+      // Update order status to PENDING_WITHDRAW before secret revelation
+      const currentOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+      const withdrawOrders = currentOrders.map((o: Order) =>
+        o.id === orderId ? { ...o, status: "PENDING_WITHDRAW", message: "Secret revealed. Starting withdrawal process..." } : o
+      );
+      localStorage.setItem("orders", JSON.stringify(withdrawOrders));
+      console.log("🔄 Order status: PENDING_WITHDRAW (secret revealed, withdrawing)");
+      
       const secretRevealResponse = await fetch("/api/order/secret-reveal", {
         method: "POST",
         headers: {
@@ -344,17 +300,17 @@ export default function SwapComponent() {
       });
       
       // Update order status to completed
-      const updatedOrders = JSON.parse(localStorage.getItem("orders") || "[]");
-      const orderIndex = updatedOrders.findIndex((o: Record<string, unknown>) => o.id === orderId);
-      if (orderIndex !== -1) {
-        updatedOrders[orderIndex].status = "completed";
-        updatedOrders[orderIndex].completedAt = Date.now();
-        updatedOrders[orderIndex].transactions = {
-          ...updatedOrders[orderIndex].transactions,
+      const completedOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+      const completedOrderIndex = completedOrders.findIndex((o: Order) => o.id === orderId);
+      if (completedOrderIndex !== -1) {
+        completedOrders[completedOrderIndex].status = "COMPLETED";
+        completedOrders[completedOrderIndex].completedAt = Date.now();
+        completedOrders[completedOrderIndex].transactions = {
+          ...completedOrders[completedOrderIndex].transactions,
           ...secretRevealResult.transactions
         };
-        updatedOrders[orderIndex].message = secretRevealResult.message;
-        localStorage.setItem("orders", JSON.stringify(updatedOrders));
+        completedOrders[completedOrderIndex].message = secretRevealResult.message;
+        localStorage.setItem("orders", JSON.stringify(completedOrders));
         console.log("✅ Order status updated to completed");
       }
       
@@ -364,11 +320,11 @@ export default function SwapComponent() {
       
       // Update order status to failed
       const failedOrders = JSON.parse(localStorage.getItem("orders") || "[]");
-      const orderIndex = failedOrders.findIndex((o: Record<string, unknown>) => o.id === orderId);
-      if (orderIndex !== -1) {
-        failedOrders[orderIndex].status = "failed";
-        failedOrders[orderIndex].failedAt = Date.now();
-        failedOrders[orderIndex].error = error instanceof Error ? error.message : "Unknown error";
+      const failedOrderIndex = failedOrders.findIndex((o: Order) => o.id === orderId);
+      if (failedOrderIndex !== -1) {
+        failedOrders[failedOrderIndex].status = "FAILED";
+        failedOrders[failedOrderIndex].failedAt = Date.now();
+        failedOrders[failedOrderIndex].error = error instanceof Error ? error.message : "Unknown error";
         localStorage.setItem("orders", JSON.stringify(failedOrders));
         console.log("❌ Order status updated to failed");
       }

@@ -2,6 +2,7 @@
 
 import { ArrowPathIcon, CheckCircleIcon, ClockIcon, TrashIcon, XCircleIcon } from "@heroicons/react/24/outline";
 import { useEffect, useState } from "react";
+import { getChainName } from "../constants/chains";
 
 interface OrderDetails {
   id: string;
@@ -98,44 +99,47 @@ export default function OpenOrders() {
     return new Date(timestamp).toLocaleString();
   };
 
-  const getChainName = (chainId: number) => {
-    switch (chainId) {
-      case 11155111:
-        return "Sepolia";
-      case 84532:
-        return "Base Sepolia";
-      default:
-        return `Chain ${chainId}`;
-    }
-  };
-
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "pending":
+      case "CREATED":
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
             <ClockIcon className="w-3 h-3 mr-1" />
-            Pending
+            Created
           </span>
         );
-      case "completed":
+      case "PENDING_SECRET":
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
+            <ClockIcon className="w-3 h-3 mr-1" />
+            Pending Secret
+          </span>
+        );
+      case "PENDING_WITHDRAW":
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200">
+            <ClockIcon className="w-3 h-3 mr-1" />
+            Pending Withdraw
+          </span>
+        );
+      case "COMPLETED":
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
             <CheckCircleIcon className="w-3 h-3 mr-1" />
             Completed
           </span>
         );
-      case "failed":
+      case "FAILED":
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">
             <XCircleIcon className="w-3 h-3 mr-1" />
             Failed
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200">
-            Unknown
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+            {status}
           </span>
         );
     }
@@ -143,14 +147,18 @@ export default function OpenOrders() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "pending":
-        return "border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800";
-      case "completed":
-        return "border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800";
-      case "failed":
-        return "border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800";
+      case "CREATED":
+        return "border-blue-200 bg-blue-50";
+      case "PENDING_SECRET":
+        return "border-yellow-200 bg-yellow-50";
+      case "PENDING_WITHDRAW":
+        return "border-orange-200 bg-orange-50";
+      case "COMPLETED":
+        return "border-green-200 bg-green-50";
+      case "FAILED":
+        return "border-red-200 bg-red-50";
       default:
-        return "border-gray-200 bg-gray-50 dark:bg-gray-700 dark:border-gray-600";
+        return "border-gray-200 bg-gray-50";
     }
   };
 

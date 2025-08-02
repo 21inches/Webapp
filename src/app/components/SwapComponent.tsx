@@ -283,6 +283,28 @@ export default function SwapComponent() {
         message: resultBody.message
       };
 
+      // Save order to local storage
+      const orderDetails = {
+        id: Date.now().toString(),
+        order: order.order,
+        secret: secret,
+        swapState: swapState,
+        fromToken: swapState.fromToken,
+        toToken: swapState.toToken,
+        status: "pending",
+        createdAt: Date.now(),
+        orderHash: orderHash,
+        transactions: resultBody.transactions,
+        message: resultBody.message
+      };
+
+      // Get existing orders from localStorage
+      const currentOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+      currentOrders.push(orderDetails);
+      localStorage.setItem("orders", JSON.stringify(currentOrders));
+      
+      console.log("💾 Order saved to local storage with ID:", orderDetails.id);
+
       console.log("⏳ Initiating secret revelation phase...");
       const secretRevealResponse = await fetch("/api/order/secret-reveal", {
         method: "POST",
@@ -319,9 +341,37 @@ export default function SwapComponent() {
         message: secretRevealResult.message
       });
       
+      // Update order status to completed
+      const existingOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+      const orderIndex = existingOrders.findIndex((o: any) => o.id === orderDetails.id);
+      if (orderIndex !== -1) {
+        existingOrders[orderIndex].status = "completed";
+        existingOrders[orderIndex].completedAt = Date.now();
+        existingOrders[orderIndex].transactions = {
+          ...existingOrders[orderIndex].transactions,
+          ...secretRevealResult.transactions
+        };
+        existingOrders[orderIndex].message = secretRevealResult.message;
+        localStorage.setItem("orders", JSON.stringify(existingOrders));
+        console.log("✅ Order status updated to completed");
+      }
+      
       console.log("✅ Cross-chain exchange process completed!");
     } catch (error) {
       console.error("❌ Exchange failed:", error);
+      
+      // Update order status to failed if we have an order ID
+      if (typeof orderDetails !== 'undefined' && orderDetails.id) {
+        const failedOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+        const orderIndex = failedOrders.findIndex((o: any) => o.id === orderDetails.id);
+        if (orderIndex !== -1) {
+          failedOrders[orderIndex].status = "failed";
+          failedOrders[orderIndex].failedAt = Date.now();
+          failedOrders[orderIndex].error = error instanceof Error ? error.message : "Unknown error";
+          localStorage.setItem("orders", JSON.stringify(failedOrders));
+          console.log("❌ Order status updated to failed");
+        }
+      }
     } finally {
       setIsLoading(false);
     }

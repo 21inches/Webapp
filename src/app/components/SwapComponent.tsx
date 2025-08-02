@@ -197,6 +197,20 @@ export default function SwapComponent() {
     if (!isConnected) return;
 
     setIsLoading(true);
+    
+    // Create order details for storage
+    const orderId = Date.now().toString();
+    const orderDetails = {
+      id: orderId,
+      swapState: swapState,
+      fromToken: swapState.fromToken,
+      toToken: swapState.toToken,
+      status: "pending" as const,
+      createdAt: Date.now(),
+      transactions: {} as Record<string, unknown>,
+      message: ""
+    };
+    
     try {
       console.log("🔄 Switching to source chain...");
       await switchChain({ chainId: swapState.fromChain });
@@ -271,6 +285,16 @@ export default function SwapComponent() {
         status: resultBody.status
       });
       
+      // Update order with initial transaction data
+      orderDetails.transactions = resultBody.transactions || {};
+      orderDetails.message = resultBody.message || "Exchange initiated";
+      
+      // Save to localStorage
+      const existingOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+      existingOrders.push(orderDetails);
+      localStorage.setItem("orders", JSON.stringify(existingOrders));
+      console.log("💾 Order saved to local storage with ID:", orderId);
+      
       const responseData = {
         srcEscrowEvent: resultBody.srcEscrowEvent,
         dstDeployedAt: resultBody.dstDeployedAt,
@@ -282,28 +306,6 @@ export default function SwapComponent() {
         status: resultBody.status,
         message: resultBody.message
       };
-
-      // Save order to local storage
-      const orderDetails = {
-        id: Date.now().toString(),
-        order: order.order,
-        secret: secret,
-        swapState: swapState,
-        fromToken: swapState.fromToken,
-        toToken: swapState.toToken,
-        status: "pending",
-        createdAt: Date.now(),
-        orderHash: orderHash,
-        transactions: resultBody.transactions,
-        message: resultBody.message
-      };
-
-      // Get existing orders from localStorage
-      const currentOrders = JSON.parse(localStorage.getItem("orders") || "[]");
-      currentOrders.push(orderDetails);
-      localStorage.setItem("orders", JSON.stringify(currentOrders));
-      
-      console.log("💾 Order saved to local storage with ID:", orderDetails.id);
 
       console.log("⏳ Initiating secret revelation phase...");
       const secretRevealResponse = await fetch("/api/order/secret-reveal", {
@@ -342,17 +344,17 @@ export default function SwapComponent() {
       });
       
       // Update order status to completed
-      const existingOrders = JSON.parse(localStorage.getItem("orders") || "[]");
-      const orderIndex = existingOrders.findIndex((o: any) => o.id === orderDetails.id);
+      const updatedOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+      const orderIndex = updatedOrders.findIndex((o: Record<string, unknown>) => o.id === orderId);
       if (orderIndex !== -1) {
-        existingOrders[orderIndex].status = "completed";
-        existingOrders[orderIndex].completedAt = Date.now();
-        existingOrders[orderIndex].transactions = {
-          ...existingOrders[orderIndex].transactions,
+        updatedOrders[orderIndex].status = "completed";
+        updatedOrders[orderIndex].completedAt = Date.now();
+        updatedOrders[orderIndex].transactions = {
+          ...updatedOrders[orderIndex].transactions,
           ...secretRevealResult.transactions
         };
-        existingOrders[orderIndex].message = secretRevealResult.message;
-        localStorage.setItem("orders", JSON.stringify(existingOrders));
+        updatedOrders[orderIndex].message = secretRevealResult.message;
+        localStorage.setItem("orders", JSON.stringify(updatedOrders));
         console.log("✅ Order status updated to completed");
       }
       
@@ -360,17 +362,15 @@ export default function SwapComponent() {
     } catch (error) {
       console.error("❌ Exchange failed:", error);
       
-      // Update order status to failed if we have an order ID
-      if (typeof orderDetails !== 'undefined' && orderDetails.id) {
-        const failedOrders = JSON.parse(localStorage.getItem("orders") || "[]");
-        const orderIndex = failedOrders.findIndex((o: any) => o.id === orderDetails.id);
-        if (orderIndex !== -1) {
-          failedOrders[orderIndex].status = "failed";
-          failedOrders[orderIndex].failedAt = Date.now();
-          failedOrders[orderIndex].error = error instanceof Error ? error.message : "Unknown error";
-          localStorage.setItem("orders", JSON.stringify(failedOrders));
-          console.log("❌ Order status updated to failed");
-        }
+      // Update order status to failed
+      const failedOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+      const orderIndex = failedOrders.findIndex((o: Record<string, unknown>) => o.id === orderId);
+      if (orderIndex !== -1) {
+        failedOrders[orderIndex].status = "failed";
+        failedOrders[orderIndex].failedAt = Date.now();
+        failedOrders[orderIndex].error = error instanceof Error ? error.message : "Unknown error";
+        localStorage.setItem("orders", JSON.stringify(failedOrders));
+        console.log("❌ Order status updated to failed");
       }
     } finally {
       setIsLoading(false);

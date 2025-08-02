@@ -32,8 +32,8 @@ export async function POST(request: Request) {
   console.log("   Source:", srcEscrowAddress.toString());
   console.log("   Destination:", dstEscrowAddress.toString());
 
-  console.log("⏳ Waiting 20 seconds before destination withdrawal...");
-  await new Promise(resolve => setTimeout(resolve, 20000));
+  console.log("⏳ Waiting 10 seconds before destination withdrawal...");
+  await new Promise(resolve => setTimeout(resolve, 10000));
 
   console.log("💰 Starting destination escrow withdrawal...");
   const dstChainResolver = getChainResolver(swapState.toChain);

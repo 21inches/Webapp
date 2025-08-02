@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
+import { prisma } from "../../../../lib/prisma";
 import { getTransactionLink } from "../../../utils/transaction";
 import { ChainConfigs, getChainResolver, getDstEscrowAddress, getSrcEscrowAddress } from "../../constants/contracts";
 import { withdrawCallData } from "../resolver";
 
 export async function POST(request: Request) {
-    const { swapState, secret, dstImmutablesData,srcImmutablesHash,dstImmutablesHash,srcImmutablesData } = await request.json();
+    const { swapState, secret, dstImmutablesData,srcImmutablesHash,dstImmutablesHash,srcImmutablesData, orderId } = await request.json();
 
     console.log("🔍 Calculating escrow addresses...");
     const srcEscrowAddress = await getSrcEscrowAddress(swapState.fromChain, srcImmutablesHash);
@@ -13,6 +14,19 @@ export async function POST(request: Request) {
     console.log("🔍 Escrow addresses calculated:");
     console.log("   Source:", srcEscrowAddress.toString());
     console.log("   Destination:", dstEscrowAddress.toString());
+
+    // Update order status to PENDING_WITHDRAW and save the secret
+    if (orderId) {
+        await prisma.order.update({
+            where: { id: orderId },
+            data: {
+                status: "PENDING_WITHDRAW",
+                secret: secret,
+                message: "Secret revealed. Starting withdrawal process..."
+            }
+        });
+        console.log("🔄 Order status updated to PENDING_WITHDRAW");
+    }
 
     console.log("⏳ Waiting 20 seconds before destination withdrawal...");
     await new Promise((resolve) => setTimeout(resolve, 20000));
@@ -42,6 +56,23 @@ export async function POST(request: Request) {
         )
     );
     console.log("✅ Source escrow withdrawn:", resolverWithdrawHash);
+    
+    // Update order status to COMPLETED
+    if (orderId) {
+        await prisma.order.update({
+            where: { id: orderId },
+            data: {
+                status: "COMPLETED",
+                completedAt: new Date(),
+                dstWithdrawTxHash: dstWithdrawHash,
+                srcWithdrawTxHash: resolverWithdrawHash,
+                dstWithdrawTxLink: getTransactionLink(swapState.toChain, dstWithdrawHash),
+                srcWithdrawTxLink: getTransactionLink(swapState.fromChain, resolverWithdrawHash),
+                message: "Cross-chain exchange completed successfully! Assets have been transferred."
+            }
+        });
+        console.log("✅ Order status updated to COMPLETED");
+    }
     
     const response = {
         srcEscrowAddress: srcEscrowAddress.toString(),

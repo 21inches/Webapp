@@ -1,4 +1,9 @@
-import { baseSepolia, sepolia } from "wagmi/chains";
+import {
+  baseSepolia,
+  etherlinkTestnet,
+  monadTestnet,
+  sepolia,
+} from "wagmi/chains";
 
 // Chain configurations
 export const CHAINS = [
@@ -13,6 +18,18 @@ export const CHAINS = [
     name: "Base Sepolia",
     logo: "/base-logo.svg",
     chain: baseSepolia,
+  },
+  {
+    id: monadTestnet.id,
+    name: "Monad Testnet",
+    logo: "/monad-logo.svg",
+    chain: monadTestnet,
+  },
+  {
+    id: etherlinkTestnet.id,
+    name: "Etherlink Testnet",
+    logo: "/etherlink-logo.svg",
+    chain: etherlinkTestnet,
   },
 ];
 

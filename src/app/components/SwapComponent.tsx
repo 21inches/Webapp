@@ -13,7 +13,7 @@ import {
   useWriteContract,
 } from "wagmi";
 import { baseSepolia, sepolia } from "wagmi/chains";
-import { CHAINS } from "../constants/chains";
+import { CHAINS, getChainLogo } from "../constants/chains";
 import { ChainConfigs } from "../constants/contracts";
 import { LOP_ADDRESSES, TOKENS } from "../constants/tokens";
 import { createOrder as createOrderLogic } from "../logic/swap";
@@ -456,7 +456,11 @@ export default function SwapComponent() {
                 onClick={() => setShowFromChainList(!showFromChainList)}
                 className="flex items-center space-x-2 bg-white dark:bg-gray-600 rounded-lg px-3 py-2 border border-gray-300 dark:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors"
               >
-                <div className="w-6 h-6 bg-gray-300 rounded-full"></div>
+                <img
+                  src={getChainLogo(swapState.fromChain)}
+                  alt="Chain logo"
+                  className="w-6 h-6 rounded-full"
+                />
                 <span className="text-sm font-medium">
                   {CHAINS.find(c => c.id === swapState.fromChain)?.name}
                 </span>
@@ -478,7 +482,11 @@ export default function SwapComponent() {
                       }}
                       className="w-full flex items-center space-x-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
                     >
-                      <div className="w-6 h-6 bg-gray-300 rounded-full"></div>
+                      <img
+                        src={getChainLogo(chain.id)}
+                        alt={`${chain.name} logo`}
+                        className="w-6 h-6 rounded-full"
+                      />
                       <span className="text-sm">{chain.name}</span>
                     </button>
                   ))}
@@ -563,7 +571,11 @@ export default function SwapComponent() {
                 onClick={() => setShowToChainList(!showToChainList)}
                 className="flex items-center space-x-2 bg-white dark:bg-gray-600 rounded-lg px-3 py-2 border border-gray-300 dark:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors"
               >
-                <div className="w-6 h-6 bg-gray-300 rounded-full"></div>
+                <img
+                  src={getChainLogo(swapState.toChain)}
+                  alt="Chain logo"
+                  className="w-6 h-6 rounded-full"
+                />
                 <span className="text-sm font-medium">
                   {CHAINS.find(c => c.id === swapState.toChain)?.name}
                 </span>
@@ -585,7 +597,11 @@ export default function SwapComponent() {
                       }}
                       className="w-full flex items-center space-x-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
                     >
-                      <div className="w-6 h-6 bg-gray-300 rounded-full"></div>
+                      <img
+                        src={getChainLogo(chain.id)}
+                        alt={`${chain.name} logo`}
+                        className="w-6 h-6 rounded-full"
+                      />
                       <span className="text-sm">{chain.name}</span>
                     </button>
                   ))}

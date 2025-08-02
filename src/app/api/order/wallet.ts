@@ -1,13 +1,22 @@
-import { AbiCoder, Contract, JsonRpcApiProvider, Wallet as PKWallet, Signer } from "ethers";
+import {
+  AbiCoder,
+  Contract,
+  JsonRpcApiProvider,
+  Wallet as PKWallet,
+  Signer,
+} from "ethers";
 import ERC20 from "./abi/IERC20.json";
 
 const coder = AbiCoder.defaultAbiCoder();
 
 class Wallet {
-  provider:JsonRpcApiProvider;
+  provider: JsonRpcApiProvider;
   signer: Signer;
 
-  constructor(privateKeyOrSigner: string | Signer, provider: JsonRpcApiProvider) {
+  constructor(
+    privateKeyOrSigner: string | Signer,
+    provider: JsonRpcApiProvider
+  ) {
     this.provider = provider;
     this.signer =
       typeof privateKeyOrSigner === "string"
@@ -15,7 +24,10 @@ class Wallet {
         : privateKeyOrSigner;
   }
 
-  static async fromAddress(address: string, provider: JsonRpcApiProvider): Promise<Wallet> {
+  static async fromAddress(
+    address: string,
+    provider: JsonRpcApiProvider
+  ): Promise<Wallet> {
     await provider.send("anvil_impersonateAccount", [address.toString()]);
 
     const signer = await provider.getSigner(address.toString());
@@ -33,7 +45,11 @@ class Wallet {
     return tokenContract.balanceOf(await this.getAddress());
   }
 
-  async topUpFromDonor(token: string, donor: string, amount: bigint): Promise<void> {
+  async topUpFromDonor(
+    token: string,
+    donor: string,
+    amount: bigint
+  ): Promise<void> {
     const donorWallet = await Wallet.fromAddress(donor, this.provider);
     await donorWallet.transferToken(token, await this.getAddress(), amount);
   }
@@ -50,7 +66,11 @@ class Wallet {
       await this.approveToken(tokenAddress, spender, BigInt(0));
     }
 
-    await this.approveToken(tokenAddress, spender, BigInt(2) ** BigInt(256) - BigInt(1));
+    await this.approveToken(
+      tokenAddress,
+      spender,
+      BigInt(2) ** BigInt(256) - BigInt(1)
+    );
   }
 
   async getAllowance(token: string, spender: string): Promise<bigint> {
@@ -66,7 +86,11 @@ class Wallet {
     });
   }
 
-  async transferToken(token: string, dest: string, amount: bigint): Promise<void> {
+  async transferToken(
+    token: string,
+    dest: string,
+    amount: bigint
+  ): Promise<void> {
     const tx = await this.signer.sendTransaction({
       to: token.toString(),
       data:
@@ -79,7 +103,11 @@ class Wallet {
     await tx.wait();
   }
 
-  async approveToken(token: string, spender: string, amount: bigint): Promise<void> {
+  async approveToken(
+    token: string,
+    spender: string,
+    amount: bigint
+  ): Promise<void> {
     const tx = await this.signer.sendTransaction({
       to: token.toString(),
       data:
@@ -92,11 +120,7 @@ class Wallet {
     await tx.wait();
   }
 
-  async send(param: {
-    to: string;
-    data?: string;
-    value?: bigint;
-  }): Promise<{
+  async send(param: { to: string; data?: string; value?: bigint }): Promise<{
     txHash: string;
     blockTimestamp: bigint;
     blockHash: string;
@@ -106,12 +130,12 @@ class Wallet {
       gasLimit: 10_000_000,
       from: await this.getAddress(),
     });
-    const receipt = await res.wait(1,60000);
+    const receipt = await res.wait(1, 60000);
     const block = await res.getBlock();
     if (receipt && receipt.status) {
       return {
         txHash: receipt.hash,
-        blockTimestamp: BigInt((block)?.timestamp ?? -1),
+        blockTimestamp: BigInt(block?.timestamp ?? -1),
         blockHash: res.blockHash!,
       };
     }

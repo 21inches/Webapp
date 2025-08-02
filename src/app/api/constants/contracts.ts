@@ -40,7 +40,7 @@ export const ChainConfigs = {
     RpcUrl: "https://sepolia.base.org",
     ResolverPrivateKey: process.env.BASE_SEPOLIA_USER_PRIVATE_KEY,
     SafetyDeposit: parseEther("0.001"),
-  }
+  },
 };
 export const getChainResolver = (chainId: number) => {
   const chainConfig = ChainConfigs[chainId];
@@ -50,19 +50,31 @@ export const getChainResolver = (chainId: number) => {
   return new Wallet(
     chainConfig.ResolverPrivateKey,
     new JsonRpcProvider(chainConfig.RpcUrl)
-  )
+  );
 };
 
-export const getSrcEscrowAddress = async (chainId: number,immutablesHash: string) => {
+export const getSrcEscrowAddress = async (
+  chainId: number,
+  immutablesHash: string
+) => {
   const chainConfig = ChainConfigs[chainId];
-  const ESCROW_SRC_IMPLEMENTATION = await getSourceImpl(new JsonRpcProvider(chainConfig.RpcUrl), chainConfig.EscrowFactory);
+  const ESCROW_SRC_IMPLEMENTATION = await getSourceImpl(
+    new JsonRpcProvider(chainConfig.RpcUrl),
+    chainConfig.EscrowFactory
+  );
   return new EscrowFactory(
     new Address(chainConfig.EscrowFactory)
   ).getEscrowAddress(immutablesHash, ESCROW_SRC_IMPLEMENTATION);
 };
-export const getDstEscrowAddress = async (dstChainId: number,immutablesHash: string) => {
+export const getDstEscrowAddress = async (
+  dstChainId: number,
+  immutablesHash: string
+) => {
   const chainConfig = ChainConfigs[dstChainId];
-  const ESCROW_DST_IMPLEMENTATION = await getDestinationImpl(new JsonRpcProvider(chainConfig.RpcUrl), chainConfig.EscrowFactory);
+  const ESCROW_DST_IMPLEMENTATION = await getDestinationImpl(
+    new JsonRpcProvider(chainConfig.RpcUrl),
+    chainConfig.EscrowFactory
+  );
   return new EscrowFactory(
     new Address(chainConfig.EscrowFactory)
   ).getEscrowAddress(immutablesHash, ESCROW_DST_IMPLEMENTATION);

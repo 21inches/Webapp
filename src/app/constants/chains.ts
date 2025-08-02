@@ -33,4 +33,4 @@ export const getChainLogo = (chainId: number): string => {
 
 export const isSupportedChain = (chainId: number): boolean => {
   return CHAINS.some(chain => chain.id === chainId);
-}; 
+};

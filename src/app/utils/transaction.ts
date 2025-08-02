@@ -11,7 +11,10 @@ export const getTransactionLink = (chainId: number, txHash: string): string => {
   }
 };
 
-export const getBlockExplorerLink = (chainId: number, blockHash: string): string => {
+export const getBlockExplorerLink = (
+  chainId: number,
+  blockHash: string
+): string => {
   switch (chainId) {
     case ChainIds.Sepolia:
       return `https://sepolia.etherscan.io/block/${blockHash}`;
@@ -22,16 +25,25 @@ export const getBlockExplorerLink = (chainId: number, blockHash: string): string
   }
 };
 
-export const formatApiResponse = (data: Record<string, unknown>, includeTxLinks = true) => {
+export const formatApiResponse = (
+  data: Record<string, unknown>,
+  includeTxLinks = true
+) => {
   const response = { ...data };
-  
+
   if (includeTxLinks && response.txHash) {
-    response.txLink = getTransactionLink(response.chainId as number, response.txHash as string);
+    response.txLink = getTransactionLink(
+      response.chainId as number,
+      response.txHash as string
+    );
   }
-  
+
   if (includeTxLinks && response.blockHash) {
-    response.blockLink = getBlockExplorerLink(response.chainId as number, response.blockHash as string);
+    response.blockLink = getBlockExplorerLink(
+      response.chainId as number,
+      response.blockHash as string
+    );
   }
-  
+
   return response;
-}; 
+};

@@ -4,11 +4,11 @@ import ResolverABI from "./abi/Resolver.json";
 
 export const deploySrcCallData = (
   srcAddress: string,
-  signature: string, 
+  signature: string,
   immutables: Sdk.ImmutablesData,
-  takerTraits: unknown, 
-  amount: bigint, 
-  orderHash: string, 
+  takerTraits: unknown,
+  amount: bigint,
+  orderHash: string,
   hashLock: Sdk.HashLock,
   orderBuild: unknown,
   srcSafetyDeposit: bigint
@@ -31,32 +31,37 @@ export const deploySrcCallData = (
   };
 };
 
-export const deployDstCallData = (dstAddress: string, immutablesData: Sdk.ImmutablesData, privateCancellation: bigint, safetyDeposit: bigint): TransactionData => {
-    return {
-      to: dstAddress,
-      data: new Interface(RESOLVER_ABI).encodeFunctionData("deployDst", [
-        immutablesData,
-        privateCancellation,
-      ]),
-      value: safetyDeposit,
-    };
-  }
+export const deployDstCallData = (
+  dstAddress: string,
+  immutablesData: Sdk.ImmutablesData,
+  privateCancellation: bigint,
+  safetyDeposit: bigint
+): TransactionData => {
+  return {
+    to: dstAddress,
+    data: new Interface(RESOLVER_ABI).encodeFunctionData("deployDst", [
+      immutablesData,
+      privateCancellation,
+    ]),
+    value: safetyDeposit,
+  };
+};
 export const withdrawCallData = (
-    side: "src" | "dst",
-    escrow: string,
-    secret: string,
-    immutables: Sdk.ImmutablesData,
-    toAddress: string
-  ) => {
-    return {
-      to: toAddress,
-      data: new Interface(RESOLVER_ABI).encodeFunctionData("withdraw", [
-        escrow,
-        secret,
-        immutables,
-      ]),
-    };
-  }
+  side: "src" | "dst",
+  escrow: string,
+  secret: string,
+  immutables: Sdk.ImmutablesData,
+  toAddress: string
+) => {
+  return {
+    to: toAddress,
+    data: new Interface(RESOLVER_ABI).encodeFunctionData("withdraw", [
+      escrow,
+      secret,
+      immutables,
+    ]),
+  };
+};
 // Use the actual Resolver ABI from the JSON file
 const RESOLVER_ABI = ResolverABI.abi;
 
@@ -77,7 +82,7 @@ class Resolver {
     this.dstAddress = dstAddress;
     this.iface = new Interface(RESOLVER_ABI);
   }
-  
+
   deployDst(immutables: Sdk.Immutables): TransactionData {
     return {
       to: this.dstAddress,
@@ -105,7 +110,11 @@ class Resolver {
     };
   }
 
-  cancel(side: "src" | "dst", escrow: Sdk.Address, immutables: Sdk.Immutables): TransactionData {
+  cancel(
+    side: "src" | "dst",
+    escrow: Sdk.Address,
+    immutables: Sdk.Immutables
+  ): TransactionData {
     return {
       to: side === "src" ? this.srcAddress : this.dstAddress,
       data: this.iface.encodeFunctionData("cancel", [

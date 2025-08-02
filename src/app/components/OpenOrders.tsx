@@ -59,7 +59,7 @@ export default function OpenOrders() {
   // Auto-refresh orders every 5 seconds
   useEffect(() => {
     loadOrders();
-    
+
     const interval = setInterval(() => {
       loadOrders();
     }, 5000);
@@ -86,7 +86,9 @@ export default function OpenOrders() {
   };
 
   const handleClearCompleted = () => {
-    const activeOrders = orders.filter(order => order.status !== "COMPLETED" && order.status !== "FAILED");
+    const activeOrders = orders.filter(
+      order => order.status !== "COMPLETED" && order.status !== "FAILED"
+    );
     localStorage.setItem("orders", JSON.stringify(activeOrders));
     setOrders(activeOrders);
   };
@@ -105,7 +107,9 @@ export default function OpenOrders() {
               className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
               title="Refresh orders"
             >
-              <ArrowPathIcon className={`w-5 h-5 ${isRefreshing ? "animate-spin" : ""}`} />
+              <ArrowPathIcon
+                className={`w-5 h-5 ${isRefreshing ? "animate-spin" : ""}`}
+              />
               <span className="sr-only">Refresh orders</span>
             </button>
           </div>
@@ -114,8 +118,12 @@ export default function OpenOrders() {
           <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
             <ArrowPathIcon className="w-8 h-8 text-gray-400 dark:text-gray-500" />
           </div>
-          <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">No orders found</p>
-          <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">Start your first cross-chain exchange to see orders here</p>
+          <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">
+            No orders found
+          </p>
+          <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
+            Start your first cross-chain exchange to see orders here
+          </p>
         </div>
       </div>
     );
@@ -129,7 +137,7 @@ export default function OpenOrders() {
             Orders
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {orders.length} order{orders.length !== 1 ? 's' : ''} 
+            {orders.length} order{orders.length !== 1 ? "s" : ""}
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -139,7 +147,9 @@ export default function OpenOrders() {
             className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
             title="Refresh orders"
           >
-            <ArrowPathIcon className={`w-5 h-5 ${isRefreshing ? "animate-spin" : ""}`} />
+            <ArrowPathIcon
+              className={`w-5 h-5 ${isRefreshing ? "animate-spin" : ""}`}
+            />
             <span className="sr-only">Refresh orders</span>
           </button>
           <button
@@ -154,10 +164,10 @@ export default function OpenOrders() {
       </div>
 
       <div className="space-y-3">
-        {orders.map((order) => (
+        {orders.map(order => (
           <OrderCard key={order.id} order={order} />
         ))}
       </div>
     </div>
   );
-} 
+}

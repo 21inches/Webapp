@@ -3,6 +3,7 @@ import {
     Immutables
 } from "@1inch/cross-chain-sdk";
 import { NextResponse } from "next/server";
+import { prisma } from "../../../lib/prisma";
 import { getBlockExplorerLink, getTransactionLink } from "../../utils/transaction";
 import { ChainConfigs, getChainResolver } from "../constants/contracts";
 import { getSrcDeployEvent } from "./escrow";
@@ -12,6 +13,25 @@ export async function POST(request: Request) {
     const { order, swapState, signature,immutables,hashLock,orderHash,orderBuild,takerTraits,srcSafetyDeposit} = await request.json();
     
     console.log("🚀 Starting cross-chain exchange process...");
+    
+    // Create order in database
+    const dbOrder = await prisma.order.create({
+        data: {
+            userAddress: swapState.userAddress || "unknown",
+            fromChainId: swapState.fromChain,
+            toChainId: swapState.toChain,
+            fromToken: swapState.fromToken.address,
+            toToken: swapState.toToken.address,
+            fromAmount: swapState.fromAmount,
+            toAmount: swapState.toAmount,
+            orderHash: orderHash,
+            secret: null, // Secret will be revealed later
+            status: "CREATED",
+            message: "Order created and signed"
+        }
+    });
+    
+    console.log("💾 Order created in database with ID:", dbOrder.id);
     
     const resolverContract = new Resolver(
         ChainConfigs[swapState.fromChain].ResolverContractAddress,
@@ -52,7 +72,23 @@ export async function POST(request: Request) {
     const srcImmutablesHash = (srcEscrowEvent[0] as Immutables).hash()
     const srcImmutablesData = (srcEscrowEvent[0] as Immutables).build()
     
+    // Update order status to PENDING_SECRET (escrows deployed, waiting for secret)
+    await prisma.order.update({
+        where: { id: dbOrder.id },
+        data: {
+            status: "PENDING_SECRET",
+            orderFillTxHash: orderFillHash,
+            dstEscrowDeployTxHash: dstDepositHash,
+            orderFillTxLink: getTransactionLink(swapState.fromChain, orderFillHash),
+            dstEscrowDeployTxLink: getTransactionLink(swapState.toChain, dstDepositHash),
+            message: "Escrow contracts deployed on both chains. Waiting for secret revelation."
+        }
+    });
+    
+    console.log("🔄 Order status updated to PENDING_SECRET");
+    
     const res = {
+        orderId: dbOrder.id,
         srcEscrowEvent: srcEscrowEvent,
         dstDeployedAt: dstDeployedAt,       
         dstImmutablesData: dstImmutablesData,

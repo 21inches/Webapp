@@ -1,237 +1,371 @@
 "use client";
 
-import { ArrowPathIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { useEffect, useState } from 'react';
-import { formatUnits } from 'viem';
-import { useAccount } from 'wagmi';
+import { ArrowPathIcon, CheckCircleIcon, ClockIcon, TrashIcon, XCircleIcon } from "@heroicons/react/24/outline";
+import { useEffect, useState } from "react";
 
 interface OrderDetails {
   id: string;
-  order: unknown;
-  secret: string;
   swapState: unknown;
-  signature: string;
-  status: 'pending' | 'completed' | 'failed';
-  createdAt: string;
-  fromChain: number;
-  toChain: number;
   fromToken: unknown;
   toToken: unknown;
-  fromAmount: string;
-  toAmount: string;
-  orderHash: string;
-  completedAt?: string;
-  failedAt?: string;
-  txHash?: string;
+  status: string;
+  createdAt: number;
+  completedAt?: number;
+  failedAt?: number;
+  orderHash?: string;
+  transactions?: {
+    orderFill?: {
+      txHash: string;
+      txLink: string;
+      description: string;
+    };
+    dstEscrowDeploy?: {
+      txHash: string;
+      txLink: string;
+      description: string;
+    };
+    dstWithdraw?: {
+      txHash: string;
+      txLink: string;
+      description: string;
+    };
+    srcWithdraw?: {
+      txHash: string;
+      txLink: string;
+      description: string;
+    };
+  };
+  message?: string;
   error?: string;
 }
 
-const CHAINS = [
-  { id: 11155111, name: "Sepolia" },
-  { id: 84532, name: "Base Sepolia" },
-];
-
-const STATUS_COLORS = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  completed: 'bg-green-100 text-green-800',
-  failed: 'bg-red-100 text-red-800'
-};
-
 export default function OpenOrders() {
-  const { address, isConnected } = useAccount();
   const [orders, setOrders] = useState<OrderDetails[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    if (isConnected && address) {
-      loadOrders();
-    }
-  }, [isConnected, address]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const loadOrders = () => {
     try {
-      const storedOrders = localStorage.getItem('crossChainOrders');
+      const storedOrders = localStorage.getItem("orders");
       if (storedOrders) {
         const parsedOrders = JSON.parse(storedOrders);
-        // Filter orders for current user (you might want to add user address to orders)
         setOrders(parsedOrders);
       }
     } catch (error) {
-      console.error('Error loading orders:', error);
+      console.error("Error loading orders:", error);
     }
   };
 
-  const formatAmount = (amount: string, decimals: number = 18) => {
-    try {
-      return Number(formatUnits(BigInt(amount), decimals)).toFixed(4);
-    } catch {
-      return amount;
-    }
-  };
+  // Auto-refresh orders every 5 seconds
+  useEffect(() => {
+    loadOrders();
+    
+    const interval = setInterval(() => {
+      loadOrders();
+    }, 5000);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
-  };
+    return () => clearInterval(interval);
+  }, []);
 
-  const getChainName = (chainId: number) => {
-    return CHAINS.find(chain => chain.id === chainId)?.name || `Chain ${chainId}`;
-  };
+  // Listen for storage changes from other tabs/windows
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "orders") {
+        loadOrders();
+      }
+    };
 
-  const getStatusBadge = (status: string) => {
-    return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[status as keyof typeof STATUS_COLORS] || 'bg-gray-100 text-gray-800'}`}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </span>
-    );
-  };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
 
   const handleRefresh = () => {
-    setIsLoading(true);
+    setIsRefreshing(true);
     loadOrders();
-    setTimeout(() => setIsLoading(false), 1000);
+    setTimeout(() => setIsRefreshing(false), 1000);
   };
 
   const handleClearCompleted = () => {
-    const filteredOrders = orders.filter(order => order.status !== 'completed');
-    localStorage.setItem('crossChainOrders', JSON.stringify(filteredOrders));
-    setOrders(filteredOrders);
+    const activeOrders = orders.filter(order => order.status !== "completed");
+    localStorage.setItem("orders", JSON.stringify(activeOrders));
+    setOrders(activeOrders);
   };
 
-  if (!isConnected) {
+  const formatAmount = (amount: string, decimals: number) => {
+    return Number(amount) / Math.pow(10, decimals);
+  };
+
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp).toLocaleString();
+  };
+
+  const getChainName = (chainId: number) => {
+    switch (chainId) {
+      case 11155111:
+        return "Sepolia";
+      case 84532:
+        return "Base Sepolia";
+      default:
+        return `Chain ${chainId}`;
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "pending":
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+            <ClockIcon className="w-3 h-3 mr-1" />
+            Pending
+          </span>
+        );
+      case "completed":
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+            <CheckCircleIcon className="w-3 h-3 mr-1" />
+            Completed
+          </span>
+        );
+      case "failed":
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+            <XCircleIcon className="w-3 h-3 mr-1" />
+            Failed
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200">
+            Unknown
+          </span>
+        );
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800";
+      case "completed":
+        return "border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800";
+      case "failed":
+        return "border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800";
+      default:
+        return "border-gray-200 bg-gray-50 dark:bg-gray-700 dark:border-gray-600";
+    }
+  };
+
+  if (orders.length === 0) {
     return (
-      <div className="w-full max-w-6xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 border border-gray-200 dark:border-gray-700">
-        <div className="text-center py-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+      <div className="w-full max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
             Open Orders
           </h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            Please connect your wallet to view your orders
-          </p>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+              title="Refresh orders"
+            >
+              <ArrowPathIcon className={`w-5 h-5 ${isRefreshing ? "animate-spin" : ""}`} />
+              <span className="sr-only">Refresh orders</span>
+            </button>
+          </div>
+        </div>
+        <div className="text-center py-12">
+          <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+            <ClockIcon className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+          </div>
+          <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">No orders found</p>
+          <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">Start your first cross-chain exchange to see orders here</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-          Open Orders
-        </h2>
-        <div className="flex space-x-2">
+    <div className="w-full max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 border border-gray-200 dark:border-gray-700">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Open Orders
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            {orders.length} order{orders.length !== 1 ? 's' : ''} • Auto-refreshing every 5 seconds
+          </p>
+        </div>
+        <div className="flex items-center space-x-2">
           <button
             onClick={handleRefresh}
-            disabled={isLoading}
-            className="group relative px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-            title="Refresh orders from local storage"
+            disabled={isRefreshing}
+            className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+            title="Refresh orders"
           >
-            <ArrowPathIcon className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-            <span className="sr-only">Refresh</span>
-            {/* Tooltip */}
-            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-              Refresh orders from local storage
-            </div>
+            <ArrowPathIcon className={`w-5 h-5 ${isRefreshing ? "animate-spin" : ""}`} />
+            <span className="sr-only">Refresh orders</span>
           </button>
           <button
             onClick={handleClearCompleted}
-            className="group relative px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-            title="Remove all completed orders from the list"
+            className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 transition-colors"
+            title="Clear completed orders"
           >
-            <TrashIcon className="w-4 h-4" />
-            <span className="sr-only">Clear Completed</span>
-            {/* Tooltip */}
-            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-              Remove all completed orders from the list
-            </div>
+            <TrashIcon className="w-5 h-5" />
+            <span className="sr-only">Clear completed orders</span>
           </button>
         </div>
       </div>
 
-      {orders.length === 0 ? (
-        <div className="text-center py-6">
-          <p className="text-gray-600 dark:text-gray-400">
-            No orders found. Create your first cross-chain order!
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {orders.map((order) => (
-            <div
-              key={order.id}
-              className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-200 dark:border-gray-600"
-            >
-              <div className="flex justify-between items-start mb-2">
-                <div className="flex items-center space-x-3">
-                  {getStatusBadge(order.status)}
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {formatDate(order.createdAt)}
-                  </span>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Order ID: {order.id}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Hash: {order.orderHash.slice(0, 10)}...{order.orderHash.slice(-8)}
-                  </p>
+      <div className="space-y-4">
+        {orders.map((order) => (
+          <div
+            key={order.id}
+            className={`rounded-xl p-6 border-2 transition-all duration-200 hover:shadow-lg ${getStatusColor(order.status)}`}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                {getStatusBadge(order.status)}
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  {formatDate(order.createdAt)}
+                </span>
+              </div>
+              {order.orderHash && (
+                <span className="text-xs text-gray-400 dark:text-gray-500 font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                  {order.orderHash.slice(0, 8)}...{order.orderHash.slice(-6)}
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-4">
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                  Exchange Details
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-3 bg-white dark:bg-gray-600 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">From</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        {formatAmount(
+                          ((order.swapState as Record<string, unknown>)?.fromAmount as string) || "0",
+                          ((order.fromToken as Record<string, unknown>)?.decimals as number) || 18
+                        )}{" "}
+                        {(order.fromToken as Record<string, unknown>)?.symbol as string}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        {getChainName((order.swapState as Record<string, unknown>)?.fromChain as number)}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-center">
+                    <div className="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center">
+                      <ArrowPathIcon className="w-3 h-3 text-gray-500 dark:text-gray-400" />
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-between items-center p-3 bg-white dark:bg-gray-600 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">To</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        {formatAmount(
+                          ((order.swapState as Record<string, unknown>)?.toAmount as string) || "0",
+                          ((order.toToken as Record<string, unknown>)?.decimals as number) || 18
+                        )}{" "}
+                        {(order.toToken as Record<string, unknown>)?.symbol as string}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        {getChainName((order.swapState as Record<string, unknown>)?.toChain as number)}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-2">
-                <div>
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-1 text-sm">From</h4>
-                  <div className="bg-white dark:bg-gray-600 rounded p-2">
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
-                      {getChainName(order.fromChain)}
-                    </p>
-                    <p className="font-medium text-sm">
-                      {formatAmount(order.fromAmount)} {(order.fromToken as { symbol: string }).symbol}
-                    </p>
+              {order.transactions && Object.keys(order.transactions).length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                    Transaction Links
+                  </h3>
+                  <div className="space-y-2">
+                    {order.transactions.orderFill && (
+                      <a
+                        href={order.transactions.orderFill.txLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between p-3 bg-white dark:bg-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors"
+                      >
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Order Fill</span>
+                        <span className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
+                          View →
+                        </span>
+                      </a>
+                    )}
+                    {order.transactions.dstEscrowDeploy && (
+                      <a
+                        href={order.transactions.dstEscrowDeploy.txLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between p-3 bg-white dark:bg-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors"
+                      >
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Escrow Deploy</span>
+                        <span className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
+                          View →
+                        </span>
+                      </a>
+                    )}
+                    {order.transactions.dstWithdraw && (
+                      <a
+                        href={order.transactions.dstWithdraw.txLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between p-3 bg-white dark:bg-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors"
+                      >
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Withdrawal</span>
+                        <span className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
+                          View →
+                        </span>
+                      </a>
+                    )}
                   </div>
                 </div>
+              )}
+            </div>
 
-                <div>
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-1 text-sm">To</h4>
-                  <div className="bg-white dark:bg-gray-600 rounded p-2">
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
-                      {getChainName(order.toChain)}
-                    </p>
-                    <p className="font-medium text-sm">
-                      {formatAmount(order.toAmount)} {(order.toToken as { symbol: string }).symbol}
-                    </p>
-                  </div>
-                </div>
+            {order.message && (
+              <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <p className="text-sm text-blue-700 dark:text-blue-300">{order.message}</p>
               </div>
+            )}
 
-              {order.status === 'completed' && order.txHash && (
-                <div className="bg-green-50 dark:bg-green-900/20 rounded p-2 mb-2">
-                  <p className="text-xs text-green-800 dark:text-green-200">
-                    <strong>Completed:</strong> {formatDate(order.completedAt!)}
-                  </p>
-                  <p className="text-xs text-green-600 dark:text-green-300">
-                    TX: {order.txHash.slice(0, 10)}...{order.txHash.slice(-8)}
-                  </p>
-                </div>
-              )}
+            {order.error && (
+              <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                <p className="text-sm text-red-700 dark:text-red-300">
+                  <strong>Error:</strong> {order.error}
+                </p>
+              </div>
+            )}
 
-              {order.status === 'failed' && order.error && (
-                <div className="bg-red-50 dark:bg-red-900/20 rounded p-2 mb-2">
-                  <p className="text-xs text-red-800 dark:text-red-200">
-                    <strong>Failed:</strong> {formatDate(order.failedAt!)}
-                  </p>
-                  <p className="text-xs text-red-600 dark:text-red-300">
-                    Error: {order.error}
-                  </p>
-                </div>
-              )}
-
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                <p>Secret: {order.secret.slice(0, 10)}...{order.secret.slice(-8)}</p>
+            <div className="mt-4 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+              <span>Order ID: {order.id}</span>
+              <div className="flex space-x-4">
+                {order.completedAt && (
+                  <span>Completed: {formatDate(order.completedAt)}</span>
+                )}
+                {order.failedAt && (
+                  <span>Failed: {formatDate(order.failedAt)}</span>
+                )}
               </div>
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 } 

@@ -15,7 +15,7 @@ export const ChainConfigs = {
       "0x7490329e69ab8e298a32dc59493034e4d02a5ccf",
     TrueERC20: "0x6dFe5DA3C989aB142CfB16a8FfA2B0e640b1d821",
     ChainName: "Sepolia",
-    RpcUrl: "https://ethereum-sepolia-rpc.publicnode.com",
+    RpcUrl: "https://sepolia.drpc.org",
     SafetyDeposit: parseEther("0.001"),
   },
   [ChainIds.BaseSepolia]: {
@@ -29,7 +29,7 @@ export const ChainConfigs = {
       "0x0418b6e80a602474fbfadc3a2594413fe68496bb",
     TrueERC20: "0x8bD9f7C82eBF9D9C830a76bAcb0E99A52163B304",
     ChainName: "BaseSepolia",
-    RpcUrl: "https://base-sepolia.drpc.org",
+    RpcUrl: "https://sepolia.base.org",
     SafetyDeposit: parseEther("0.001"),
   },
 };

@@ -106,12 +106,12 @@ class Wallet {
       gasLimit: 10_000_000,
       from: await this.getAddress(),
     });
-    const receipt = await res.wait(1,30000);
-
+    const receipt = await res.wait(1,60000);
+    const block = await res.getBlock();
     if (receipt && receipt.status) {
       return {
         txHash: receipt.hash,
-        blockTimestamp: BigInt((await res.getBlock())?.timestamp ?? -1),
+        blockTimestamp: BigInt((block)?.timestamp ?? -1),
         blockHash: res.blockHash!,
       };
     }

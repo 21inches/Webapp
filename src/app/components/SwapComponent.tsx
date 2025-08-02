@@ -4,7 +4,14 @@ import { Address, AmountMode, TakerTraits } from "@1inch/cross-chain-sdk";
 import { ArrowsUpDownIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { useEffect, useState } from "react";
 import { formatUnits, hashTypedData, parseUnits } from "viem";
-import { useAccount, useBalance, useReadContract, useSignTypedData, useSwitchChain, useWriteContract } from "wagmi";
+import {
+  useAccount,
+  useBalance,
+  useReadContract,
+  useSignTypedData,
+  useSwitchChain,
+  useWriteContract,
+} from "wagmi";
 import { baseSepolia, sepolia } from "wagmi/chains";
 import { CHAINS } from "../constants/chains";
 import { ChainConfigs } from "../constants/contracts";
@@ -68,7 +75,10 @@ export default function SwapComponent() {
 
   const needsApproval = () => {
     if (!fromTokenBalance || !allowance) return false;
-    const requiredAmount = parseUnits(swapState.fromAmount, swapState.fromToken.decimals);
+    const requiredAmount = parseUnits(
+      swapState.fromAmount,
+      swapState.fromToken.decimals
+    );
     return (allowance as bigint) < requiredAmount;
   };
 
@@ -78,8 +88,11 @@ export default function SwapComponent() {
     setIsApproving(true);
     try {
       console.log("🔐 Approving token spend...");
-      const requiredAmount = parseUnits(swapState.fromAmount, swapState.fromToken.decimals);
-      
+      const requiredAmount = parseUnits(
+        swapState.fromAmount,
+        swapState.fromToken.decimals
+      );
+
       await writeContract({
         address: swapState.fromToken.address as `0x${string}`,
         abi: [
@@ -95,7 +108,10 @@ export default function SwapComponent() {
           },
         ],
         functionName: "approve",
-        args: [LOP_ADDRESSES[swapState.fromChain] as `0x${string}`, requiredAmount],
+        args: [
+          LOP_ADDRESSES[swapState.fromChain] as `0x${string}`,
+          requiredAmount,
+        ],
         chainId: swapState.fromChain,
       });
       console.log("✅ Token approval successful");
@@ -133,7 +149,7 @@ export default function SwapComponent() {
     if (!isConnected) return;
 
     setIsLoading(true);
-    
+
     // Create order details for storage
     const orderId = Date.now().toString();
     const orderDetails: Order = {
@@ -146,14 +162,14 @@ export default function SwapComponent() {
       createdAt: Date.now(),
       transactions: {},
     };
-    
+
     // Save order to localStorage immediately in CREATED state
     const existingOrders = JSON.parse(localStorage.getItem("orders") || "[]");
     existingOrders.push(orderDetails);
     localStorage.setItem("orders", JSON.stringify(existingOrders));
     console.log("💾 Order created and saved to localStorage with ID:", orderId);
     console.log("🆕 Order status: CREATED (order created and signed)");
-    
+
     try {
       console.log("🔄 Switching to source chain...");
       await switchChain({ chainId: swapState.fromChain });
@@ -163,7 +179,7 @@ export default function SwapComponent() {
       const secret =
         "0x0000000000000000000000000000000000000000000000000000000000000000";
       console.log("✅ Switched to source chain successfully");
-      
+
       console.log("📝 Creating order data...");
       const order = await createOrderLogic(
         address!,
@@ -177,43 +193,59 @@ export default function SwapComponent() {
         swapState.fromToken.decimals,
         swapState.toToken.decimals
       );
-      
+
       console.log("🔐 Signing order data...");
       const signature = await signTypedDataAsync(order.orderdata);
-      
+
       console.log("📦 Preparing order for submission...");
       const orderBuild = order.order.build();
       const hashLock = order.order.escrowExtension.hashLockInfo;
-      const orderHash = hashTypedData(order.orderdata as { domain: Record<string, unknown>; types: Record<string, unknown>; primaryType: string; message: Record<string, unknown> });
+      const orderHash = hashTypedData(
+        order.orderdata as {
+          domain: Record<string, unknown>;
+          types: Record<string, unknown>;
+          primaryType: string;
+          message: Record<string, unknown>;
+        }
+      );
       const takerTraits = TakerTraits.default()
-      .setExtension(order.order.extension)
-          .setAmountMode(AmountMode.maker)
-          .setAmountThreshold(order.order.takingAmount).encode()
-      const immutables = order.order.toSrcImmutables(
-        swapState.fromChain,
-        new Address(ChainConfigs[swapState.fromChain].ResolverContractAddress),
-        order.order.makingAmount,
-        order.order.escrowExtension.hashLockInfo
-      ).build();
-      const srcSafetyDeposit = BigInt(order.order.escrowExtension.srcSafetyDeposit);
-      
+        .setExtension(order.order.extension)
+        .setAmountMode(AmountMode.maker)
+        .setAmountThreshold(order.order.takingAmount)
+        .encode();
+      const immutables = order.order
+        .toSrcImmutables(
+          swapState.fromChain,
+          new Address(
+            ChainConfigs[swapState.fromChain].ResolverContractAddress
+          ),
+          order.order.makingAmount,
+          order.order.escrowExtension.hashLockInfo
+        )
+        .build();
+      const srcSafetyDeposit = BigInt(
+        order.order.escrowExtension.srcSafetyDeposit
+      );
+
       console.log("🚀 Submitting order to exchange...");
       const response = await fetch("/api/order", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          order: order.order,
-          swapState: swapState,
-          signature: signature,
-          immutables: immutables,
-          hashLock: hashLock,
-          orderHash: orderHash,
-          orderBuild: orderBuild,
-          takerTraits: takerTraits,
-          srcSafetyDeposit: srcSafetyDeposit
-        },(key, value) => (typeof value === "bigint" ? value.toString() : value)
+        body: JSON.stringify(
+          {
+            order: order.order,
+            swapState: swapState,
+            signature: signature,
+            immutables: immutables,
+            hashLock: hashLock,
+            orderHash: orderHash,
+            orderBuild: orderBuild,
+            takerTraits: takerTraits,
+            srcSafetyDeposit: srcSafetyDeposit,
+          },
+          (key, value) => (typeof value === "bigint" ? value.toString() : value)
         ),
       });
 
@@ -222,28 +254,41 @@ export default function SwapComponent() {
       }
 
       const resultBody = await response.json();
-      
+
       console.log("✅ Exchange initiated successfully!");
       console.log("📊 Transaction details:", {
         orderFill: resultBody.transactions?.orderFill?.txLink,
         dstEscrowDeploy: resultBody.transactions?.dstEscrowDeploy?.txLink,
-        status: resultBody.status
+        status: resultBody.status,
       });
-      
+
       // Update order with initial transaction data
       orderDetails.transactions = resultBody.transactions || {};
       orderDetails.message = resultBody.message || "Exchange initiated";
       orderDetails.status = "PENDING_SECRET"; // Update to PENDING_SECRET after escrow deployment
-      
+
       // Update existing order in localStorage
-      const pendingSecretOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+      const pendingSecretOrders = JSON.parse(
+        localStorage.getItem("orders") || "[]"
+      );
       const updatedOrders = pendingSecretOrders.map((o: Order) =>
-        o.id === orderId ? { ...o, status: "PENDING_SECRET", transactions: resultBody.transactions || {}, message: resultBody.message || "Escrow contracts deployed on both chains. Waiting for secret revelation." } : o
+        o.id === orderId
+          ? {
+              ...o,
+              status: "PENDING_SECRET",
+              transactions: resultBody.transactions || {},
+              message:
+                resultBody.message ||
+                "Escrow contracts deployed on both chains. Waiting for secret revelation.",
+            }
+          : o
       );
       localStorage.setItem("orders", JSON.stringify(updatedOrders));
       console.log("💾 Order updated in localStorage with ID:", orderId);
-      console.log("🔄 Order status: PENDING_SECRET (waiting for secret revelation)");
-      
+      console.log(
+        "🔄 Order status: PENDING_SECRET (waiting for secret revelation)"
+      );
+
       const responseData = {
         srcEscrowEvent: resultBody.srcEscrowEvent,
         dstDeployedAt: resultBody.dstDeployedAt,
@@ -253,19 +298,27 @@ export default function SwapComponent() {
         srcImmutablesData: resultBody.srcImmutablesData,
         transactions: resultBody.transactions,
         status: resultBody.status,
-        message: resultBody.message
+        message: resultBody.message,
       };
 
       console.log("⏳ Initiating secret revelation phase...");
-      
+
       // Update order status to PENDING_WITHDRAW before secret revelation
       const currentOrders = JSON.parse(localStorage.getItem("orders") || "[]");
       const withdrawOrders = currentOrders.map((o: Order) =>
-        o.id === orderId ? { ...o, status: "PENDING_WITHDRAW", message: "Secret revealed. Starting withdrawal process..." } : o
+        o.id === orderId
+          ? {
+              ...o,
+              status: "PENDING_WITHDRAW",
+              message: "Secret revealed. Starting withdrawal process...",
+            }
+          : o
       );
       localStorage.setItem("orders", JSON.stringify(withdrawOrders));
-      console.log("🔄 Order status: PENDING_WITHDRAW (secret revealed, withdrawing)");
-      
+      console.log(
+        "🔄 Order status: PENDING_WITHDRAW (secret revealed, withdrawing)"
+      );
+
       const secretRevealResponse = await fetch("/api/order/secret-reveal", {
         method: "POST",
         headers: {
@@ -282,7 +335,7 @@ export default function SwapComponent() {
             dstImmutablesData: responseData.dstImmutablesData,
             dstImmutablesHash: responseData.dstImmutablesHash,
             srcImmutablesHash: responseData.srcImmutablesHash,
-            srcImmutablesData: responseData.srcImmutablesData
+            srcImmutablesData: responseData.srcImmutablesData,
           },
           (key, value) => (typeof value === "bigint" ? value.toString() : value)
         ),
@@ -298,35 +351,43 @@ export default function SwapComponent() {
         dstWithdraw: secretRevealResult.transactions?.dstWithdraw?.txLink,
         srcWithdraw: secretRevealResult.transactions?.srcWithdraw?.txLink,
         status: secretRevealResult.status,
-        message: secretRevealResult.message
+        message: secretRevealResult.message,
       });
-      
+
       // Update order status to completed
-      const completedOrders = JSON.parse(localStorage.getItem("orders") || "[]");
-      const completedOrderIndex = completedOrders.findIndex((o: Order) => o.id === orderId);
+      const completedOrders = JSON.parse(
+        localStorage.getItem("orders") || "[]"
+      );
+      const completedOrderIndex = completedOrders.findIndex(
+        (o: Order) => o.id === orderId
+      );
       if (completedOrderIndex !== -1) {
         completedOrders[completedOrderIndex].status = "COMPLETED";
         completedOrders[completedOrderIndex].completedAt = Date.now();
         completedOrders[completedOrderIndex].transactions = {
           ...completedOrders[completedOrderIndex].transactions,
-          ...secretRevealResult.transactions
+          ...secretRevealResult.transactions,
         };
-        completedOrders[completedOrderIndex].message = secretRevealResult.message;
+        completedOrders[completedOrderIndex].message =
+          secretRevealResult.message;
         localStorage.setItem("orders", JSON.stringify(completedOrders));
         console.log("✅ Order status updated to completed");
       }
-      
+
       console.log("✅ Cross-chain exchange process completed!");
     } catch (error) {
       console.error("❌ Exchange failed:", error);
-      
+
       // Update order status to failed
       const failedOrders = JSON.parse(localStorage.getItem("orders") || "[]");
-      const failedOrderIndex = failedOrders.findIndex((o: Order) => o.id === orderId);
+      const failedOrderIndex = failedOrders.findIndex(
+        (o: Order) => o.id === orderId
+      );
       if (failedOrderIndex !== -1) {
         failedOrders[failedOrderIndex].status = "FAILED";
         failedOrders[failedOrderIndex].failedAt = Date.now();
-        failedOrders[failedOrderIndex].error = error instanceof Error ? error.message : "Unknown error";
+        failedOrders[failedOrderIndex].error =
+          error instanceof Error ? error.message : "Unknown error";
         localStorage.setItem("orders", JSON.stringify(failedOrders));
         console.log("❌ Order status updated to failed");
       }
@@ -445,7 +506,9 @@ export default function SwapComponent() {
             type="number"
             placeholder="0.0"
             value={swapState.fromAmount}
-            onChange={(e) => setSwapState(prev => ({ ...prev, fromAmount: e.target.value }))}
+            onChange={e =>
+              setSwapState(prev => ({ ...prev, fromAmount: e.target.value }))
+            }
             className="w-full bg-transparent text-2xl font-bold text-gray-900 dark:text-white outline-none"
           />
         </div>
@@ -550,7 +613,9 @@ export default function SwapComponent() {
             type="number"
             placeholder="0.0"
             value={swapState.toAmount}
-            onChange={(e) => setSwapState(prev => ({ ...prev, toAmount: e.target.value }))}
+            onChange={e =>
+              setSwapState(prev => ({ ...prev, toAmount: e.target.value }))
+            }
             className="w-full bg-transparent text-2xl font-bold text-gray-900 dark:text-white outline-none"
           />
         </div>
@@ -559,8 +624,12 @@ export default function SwapComponent() {
       {/* Exchange Fee */}
       <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
         <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-600 dark:text-gray-400">Exchange Fee</span>
-          <span className="text-sm font-medium text-gray-900 dark:text-white">0.001 ETH</span>
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            Exchange Fee
+          </span>
+          <span className="text-sm font-medium text-gray-900 dark:text-white">
+            0.001 ETH
+          </span>
         </div>
       </div>
 

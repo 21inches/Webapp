@@ -34,10 +34,15 @@ export const getTokensForChain = (chainId: number): Token[] => {
   return TOKENS[chainId] || [];
 };
 
-export const getTokenByAddress = (chainId: number, address: string): Token | undefined => {
-  return TOKENS[chainId]?.find(token => token.address.toLowerCase() === address.toLowerCase());
+export const getTokenByAddress = (
+  chainId: number,
+  address: string
+): Token | undefined => {
+  return TOKENS[chainId]?.find(
+    token => token.address.toLowerCase() === address.toLowerCase()
+  );
 };
 
 export const getLopAddress = (chainId: number): string => {
   return LOP_ADDRESSES[chainId] || "";
-}; 
+};

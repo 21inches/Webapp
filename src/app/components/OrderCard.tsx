@@ -1,6 +1,11 @@
 "use client";
 
-import { ArrowTopRightOnSquareIcon, CheckCircleIcon, ClockIcon, XCircleIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowTopRightOnSquareIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  XCircleIcon,
+} from "@heroicons/react/24/outline";
 import { getChainName } from "../constants/chains";
 
 interface OrderDetails {
@@ -120,7 +125,15 @@ export default function OrderCard({ order }: OrderCardProps) {
     }
   };
 
-  const TransactionLink = ({ href, tooltip, className = "" }: { href: string; tooltip: string; className?: string }) => (
+  const TransactionLink = ({
+    href,
+    tooltip,
+    className = "",
+  }: {
+    href: string;
+    tooltip: string;
+    className?: string;
+  }) => (
     <a
       href={href}
       target="_blank"
@@ -133,7 +146,9 @@ export default function OrderCard({ order }: OrderCardProps) {
   );
 
   return (
-    <div className={`rounded-lg p-3 border transition-all duration-200 hover:shadow-md ${getStatusColor(order.status)}`}>
+    <div
+      className={`rounded-lg p-3 border transition-all duration-200 hover:shadow-md ${getStatusColor(order.status)}`}
+    >
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center space-x-2">
           {getStatusBadge(order.status)}
@@ -156,48 +171,75 @@ export default function OrderCard({ order }: OrderCardProps) {
           <div className="p-3 bg-white dark:bg-gray-600 rounded">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <span className="text-sm text-gray-600 dark:text-gray-400">From:</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  From:
+                </span>
                 <span className="text-sm font-medium text-gray-900 dark:text-white">
                   {formatAmount(
-                    ((order.swapState as Record<string, unknown>)?.fromAmount as string) || "0",
-                    ((order.fromToken as Record<string, unknown>)?.decimals as number) || 18
+                    ((order.swapState as Record<string, unknown>)
+                      ?.fromAmount as string) || "0",
+                    ((order.fromToken as Record<string, unknown>)
+                      ?.decimals as number) || 18
                   )}{" "}
-                  {(order.fromToken as Record<string, unknown>)?.symbol as string}
+                  {
+                    (order.fromToken as Record<string, unknown>)
+                      ?.symbol as string
+                  }
                 </span>
                 <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center">
                   <span className="text-xs font-medium text-blue-600">🔵</span>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-2">
                 <div className="w-6 h-6 bg-gray-100 dark:bg-gray-500 rounded-full flex items-center justify-center">
-                  <svg className="w-3 h-3 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14m0 0l-4-4m4 4l-4 4" />
+                  <svg
+                    className="w-3 h-3 text-gray-600 dark:text-gray-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 12h14m0 0l-4-4m4 4l-4 4"
+                    />
                   </svg>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-3">
                 <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
                   <span className="text-xs font-medium text-green-600">🟢</span>
                 </div>
                 <span className="text-sm font-medium text-gray-900 dark:text-white">
                   {formatAmount(
-                    ((order.swapState as Record<string, unknown>)?.toAmount as string) || "0",
-                    ((order.toToken as Record<string, unknown>)?.decimals as number) || 18
+                    ((order.swapState as Record<string, unknown>)
+                      ?.toAmount as string) || "0",
+                    ((order.toToken as Record<string, unknown>)
+                      ?.decimals as number) || 18
                   )}{" "}
                   {(order.toToken as Record<string, unknown>)?.symbol as string}
                 </span>
-                <span className="text-sm text-gray-600 dark:text-gray-400">To:</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  To:
+                </span>
               </div>
             </div>
-            
+
             <div className="flex items-center justify-between mt-2">
               <span className="text-xs text-gray-500 dark:text-gray-400">
-                {getChainName((order.swapState as Record<string, unknown>)?.fromChain as number)}
+                {getChainName(
+                  (order.swapState as Record<string, unknown>)
+                    ?.fromChain as number
+                )}
               </span>
               <span className="text-xs text-gray-500 dark:text-gray-400">
-                {getChainName((order.swapState as Record<string, unknown>)?.toChain as number)}
+                {getChainName(
+                  (order.swapState as Record<string, unknown>)
+                    ?.toChain as number
+                )}
               </span>
             </div>
           </div>
@@ -278,7 +320,9 @@ export default function OrderCard({ order }: OrderCardProps) {
 
       {order.message && (
         <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
-          <p className="text-xs text-blue-700 dark:text-blue-300">{order.message}</p>
+          <p className="text-xs text-blue-700 dark:text-blue-300">
+            {order.message}
+          </p>
         </div>
       )}
 
@@ -293,14 +337,10 @@ export default function OrderCard({ order }: OrderCardProps) {
       <div className="mt-2 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
         <span>ID: {order.id}</span>
         <div className="flex space-x-2">
-          {order.completedAt && (
-            <span>✓ {formatDate(order.completedAt)}</span>
-          )}
-          {order.failedAt && (
-            <span>✗ {formatDate(order.failedAt)}</span>
-          )}
+          {order.completedAt && <span>✓ {formatDate(order.completedAt)}</span>}
+          {order.failedAt && <span>✗ {formatDate(order.failedAt)}</span>}
         </div>
       </div>
     </div>
   );
-} 
+}

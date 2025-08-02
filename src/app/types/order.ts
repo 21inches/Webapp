@@ -1,7 +1,7 @@
 // Order lifecycle states
-export type OrderStatus = 
+export type OrderStatus =
   | "CREATED"
-  | "PENDING_SECRET" 
+  | "PENDING_SECRET"
   | "PENDING_WITHDRAW"
   | "COMPLETED"
   | "FAILED";
@@ -69,4 +69,4 @@ export interface Order {
   error?: string;
   transactions?: OrderTransactions;
   metadata?: Record<string, unknown>;
-} 
+}

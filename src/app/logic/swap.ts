@@ -1,13 +1,15 @@
 "use client";
 import {
-  Address,
-  AuctionDetails,
-  CrossChainOrder,
-  HashLock,
-  randBigInt,
-  TimeLocks
+    Address,
+    AuctionDetails,
+    CrossChainOrder,
+    HashLock,
+    randBigInt,
+    TimeLocks
 } from "@1inch/cross-chain-sdk";
+import { parseUnits } from "viem";
 import { ChainConfigs } from "../constants/contracts";
+
 export const createOrder = async (
   srcChainUserAddress: string,
   makingAmount: string,
@@ -16,7 +18,9 @@ export const createOrder = async (
   dstTokenAddress: string,
   secret: string,
   srcChainId: number,
-  dstChainId: number
+  dstChainId: number,
+  srcTokenDecimals: number = 18,
+  dstTokenDecimals: number = 18
 ): Promise<{ order: CrossChainOrder; orderdata: { domain: Record<string, unknown>; types: Record<string, unknown>; primaryType: string; message: Record<string, unknown> }; secret: string }> => {
   const escrowFactoryAddress = ChainConfigs[srcChainId].EscrowFactory;
   const srcTimestamp = BigInt(Math.floor(Date.now() / 1000));
@@ -25,8 +29,8 @@ export const createOrder = async (
     {
       salt: randBigInt(1000),
       maker: new Address(srcChainUserAddress),
-      makingAmount: BigInt(makingAmount),
-      takingAmount: BigInt(takingAmount),
+      makingAmount: parseUnits(makingAmount, srcTokenDecimals),
+      takingAmount: parseUnits(takingAmount, dstTokenDecimals),
       makerAsset: new Address(srcTokenAddress),
       takerAsset: new Address(dstTokenAddress),
     },

@@ -173,7 +173,9 @@ export default function SwapComponent() {
         swapState.toToken.address,
         secret,
         swapState.fromChain,
-        swapState.toChain
+        swapState.toChain,
+        swapState.fromToken.decimals,
+        swapState.toToken.decimals
       );
       
       console.log("🔐 Signing order data...");

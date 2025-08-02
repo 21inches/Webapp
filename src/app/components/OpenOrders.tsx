@@ -92,7 +92,14 @@ export default function OpenOrders() {
   };
 
   const formatAmount = (amount: string, decimals: number) => {
-    return Number(amount) / Math.pow(10, decimals);
+    try {
+      // If amount is already in human-readable format (contains a decimal point), return as-is
+        return Number(amount).toFixed(6);
+
+    } catch (error) {
+      console.error("Error formatting amount:", error);
+      return "0";
+    }
   };
 
   const formatDate = (timestamp: number) => {

@@ -15,7 +15,7 @@ export default function Home() {
           <SwapComponent />
         </div>
 
-        {/* Open Orders Section */}
+        {/* Orders Section */}
         <div className="w-full">
           <OpenOrders />
         </div>

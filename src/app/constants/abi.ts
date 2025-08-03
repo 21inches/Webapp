@@ -194,14 +194,4 @@ export const ERC20_ABI = [
   }
 ];
 
-// Helper function to get the appropriate ABI based on chain type
-export const getTokenABI = (chainId: number) => {
-  // Import here to avoid circular dependency
-  const { isTronChain } = require("../constants/chains");
-  
-  if (isTronChain(chainId)) {
-    return TRC20_ABI;
-  } else {
-    return ERC20_ABI;
-  }
-}; 
+ 

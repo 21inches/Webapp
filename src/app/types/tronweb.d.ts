@@ -5,19 +5,19 @@ declare global {
       contract(): {
         at(address: string): Promise<{
           balanceOf(address: string): {
-            call(): Promise<any>;
+            call(): Promise<unknown>;
           };
           allowance(owner: string, spender: string): {
-            call(): Promise<any>;
+            call(): Promise<unknown>;
           };
           approve(spender: string, amount: string): {
-            send(): Promise<any>;
+            send(): Promise<unknown>;
           };
           transfer(to: string, amount: string): {
-            send(): Promise<any>;
+            send(): Promise<unknown>;
           };
           transferFrom(from: string, to: string, amount: string): {
-            send(): Promise<any>;
+            send(): Promise<unknown>;
           };
         }>;
       };
@@ -26,9 +26,9 @@ declare global {
         hex: string;
       };
       ready: boolean;
-      request: (request: any) => Promise<any>;
+      request: (request: unknown) => Promise<unknown>;
       signMessage: (message: string) => Promise<string>;
-      signTransaction: (transaction: any) => Promise<any>;
+      signTransaction: (transaction: unknown) => Promise<unknown>;
     };
   }
 }

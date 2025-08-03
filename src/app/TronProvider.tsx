@@ -14,7 +14,7 @@ export function TronProvider({ children }: PropsWithChildren) {
   const [adapters, setAdapters] = useState<Adapter[]>([]);
   useEffect(() => {
       import('@tronweb3/tronwallet-adapters').then((res) => {
-          const { BitKeepAdapter, OkxWalletAdapter, TokenPocketAdapter, TronLinkAdapter, WalletConnectAdapter } = res;
+                          const { BitKeepAdapter, OkxWalletAdapter, TokenPocketAdapter, TronLinkAdapter } = res;
           const tronLinkAdapter = new TronLinkAdapter({
               openTronLinkAppOnMobile: true,
               openUrlWhenWalletNotFound: false,

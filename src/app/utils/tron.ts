@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { TRC20_ABI } from "../constants/abi";
 import { getTronNetwork, isTronChain } from "../constants/chains";
 import { ChainIds } from "../constants/contracts";
@@ -207,7 +208,7 @@ export const getTronTokenBalance = async (
         console.log("💰 [getTronTokenBalance] TronWeb balance result:", balance);
         
         // Convert balance to string and adjust for decimals
-        const balanceString = balance.toString();
+        const balanceString = String(balance);
         console.log("💰 [getTronTokenBalance] Raw balance:", balanceString);
         
         // Note: You might want to adjust for decimals here
@@ -409,7 +410,7 @@ export const approveTronToken = async (
         const result = await contract.approve(spenderAddress, amount).send();
         console.log("📊 [approveTronToken] TronWeb approval result:", result);
         
-        const txHash = result.txid || result.transaction?.txID || "0x0000000000000000000000000000000000000000000000000000000000000000";
+        const txHash = (result as any).txid || (result as any).transaction?.txID || "0x0000000000000000000000000000000000000000000000000000000000000000";
         console.log("✅ [approveTronToken] TronWeb transaction hash:", txHash);
         
         return txHash;
@@ -428,7 +429,7 @@ export const approveTronToken = async (
 
         console.log("📊 [approveTronToken] Wallet adapter transaction result:", transaction);
         
-        const txHash = transaction.txid || "0x0000000000000000000000000000000000000000000000000000000000000000";
+        const txHash = (transaction as any).txid || "0x0000000000000000000000000000000000000000000000000000000000000000";
         console.log("✅ [approveTronToken] Wallet adapter transaction hash:", txHash);
         
         return txHash;
@@ -447,7 +448,7 @@ export const approveTronToken = async (
 
       console.log("📊 [approveTronToken] Wallet adapter transaction result:", transaction);
       
-      const txHash = transaction.txid || "0x0000000000000000000000000000000000000000000000000000000000000000";
+      const txHash = (transaction as any).txid || "0x0000000000000000000000000000000000000000000000000000000000000000";
       console.log("✅ [approveTronToken] Wallet adapter transaction hash:", txHash);
       
       return txHash;
@@ -503,7 +504,7 @@ export const checkTronTokenAllowance = async (
         console.log("💰 [checkTronTokenAllowance] TronWeb allowance result:", allowance);
         
         // Convert allowance to string
-        const allowanceString = allowance.toString();
+        const allowanceString = String(allowance);
         console.log("💰 [checkTronTokenAllowance] Raw allowance:", allowanceString);
         
         return allowanceString;

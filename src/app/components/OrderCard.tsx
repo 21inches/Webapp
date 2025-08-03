@@ -49,7 +49,7 @@ interface OrderCardProps {
 }
 
 export default function OrderCard({ order }: OrderCardProps) {
-  const formatAmount = (amount: string, decimals: number) => {
+  const formatAmount = (amount: string) => {
     try {
       return Number(amount).toFixed(6);
     } catch (error) {
@@ -125,25 +125,7 @@ export default function OrderCard({ order }: OrderCardProps) {
     }
   };
 
-  const TransactionLink = ({
-    href,
-    tooltip,
-    className = "",
-  }: {
-    href: string;
-    tooltip: string;
-    className?: string;
-  }) => (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={`p-1 text-gray-500 hover:text-blue-600 transition-colors ${className}`}
-      title={tooltip}
-    >
-      <ArrowTopRightOnSquareIcon className="w-4 h-4" />
-    </a>
-  );
+
 
   return (
     <div
@@ -177,9 +159,7 @@ export default function OrderCard({ order }: OrderCardProps) {
                 <span className="text-sm font-medium text-gray-900 dark:text-white">
                   {formatAmount(
                     ((order.swapState as Record<string, unknown>)
-                      ?.fromAmount as string) || "0",
-                    ((order.fromToken as Record<string, unknown>)
-                      ?.decimals as number) || 18
+                      ?.fromAmount as string) || "0"
                   )}{" "}
                   {
                     (order.fromToken as Record<string, unknown>)
@@ -216,9 +196,7 @@ export default function OrderCard({ order }: OrderCardProps) {
                 <span className="text-sm font-medium text-gray-900 dark:text-white">
                   {formatAmount(
                     ((order.swapState as Record<string, unknown>)
-                      ?.toAmount as string) || "0",
-                    ((order.toToken as Record<string, unknown>)
-                      ?.decimals as number) || 18
+                      ?.toAmount as string) || "0"
                   )}{" "}
                   {(order.toToken as Record<string, unknown>)?.symbol as string}
                 </span>

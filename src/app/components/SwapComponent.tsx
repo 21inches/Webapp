@@ -32,7 +32,7 @@ export default function SwapComponent() {
   const { signTypedDataAsync } = useSignTypedData();
   
   // Tron wallet integration
-  const { wallet, connected: tronConnected, connecting: tronConnecting } = useWallet();
+  const { wallet, connected: tronConnected } = useWallet();
 
   const [swapState, setSwapState] = useState<SwapState>({
     fromChain: sepolia.id,
@@ -84,7 +84,7 @@ export default function SwapComponent() {
     chainId: swapState.toChain,
   });
 
-  const { data: allowance, isLoading: allowanceLoading, error: allowanceError } = useReadContract({
+  const { data: allowance } = useReadContract({
     address: swapState.fromToken.address as `0x${string}`,
     abi: [
       {

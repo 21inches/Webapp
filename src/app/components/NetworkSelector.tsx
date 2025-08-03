@@ -7,7 +7,7 @@ import { ALL_CHAINS, isTronChain } from "../constants/chains";
 export function NetworkSelector() {
   const { chain } = useAccount();
   const { switchChain } = useSwitchChain();
-  const { wallet, connected, connecting, disconnect, select } = useWallet();
+  const { wallet, connected, disconnect } = useWallet();
 
   const handleNetworkSwitch = async (chainId: number) => {
     if (isTronChain(chainId)) {

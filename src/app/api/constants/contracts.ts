@@ -11,7 +11,7 @@ export const ChainIds = {
   BaseSepolia: 84532,
   MonadTestnet: 10143,
   EtherlinkTestnet: 128123,
-  NILE: 3448148188,
+  TronNile: 3448148188,
 };
 export const ChainConfigs = {
   [ChainIds.Sepolia]: {
@@ -74,7 +74,7 @@ export const ChainConfigs = {
     ResolverPrivateKey: process.env.MONAD_TESTNET_USER_PRIVATE_KEY,
     SafetyDeposit: parseEther("0.001"),
   },
-  [ChainIds.NILE]: {
+  [ChainIds.TronNile]: {
     LOP: "0x0656e98bf5b9457048b8ac0985cb48b1b6def4ac", // TAYjAyuKjKvkhkcvgJ7CgrJ8PVziU5vr4R
     EscrowFactory: "0x527eb6a0f425c77722da1d92aa515f691606571b", // THVQCzNgJxTvBRH297tmHXuxVdcahipy3f
     ResolverContractAddress: "0x9afd02fe7b017867e7468a0cacb3546c721edd84", // TQ6iAAL9oV4Xh6DrQwZ8iGa7q1QAcwhpui

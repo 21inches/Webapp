@@ -4,6 +4,16 @@ import {
   monadTestnet,
   sepolia,
 } from "wagmi/chains";
+// Tron network configurations
+export const TRON_NETWORKS = {
+  nile: {
+    id: 3448148188, // Tron Nile Testnet chain ID
+    name: "Tron Nile Testnet",
+    logo: "/tron-logo.png",
+    chainId: 3448148188,
+    rpcUrl: "https://nile.trongrid.io",
+  },
+};
 
 // Chain configurations
 export const CHAINS = [
@@ -33,9 +43,20 @@ export const CHAINS = [
   },
 ];
 
+// Combined chains including Tron networks
+export const ALL_CHAINS = [
+  ...CHAINS,
+  {
+    id: TRON_NETWORKS.nile.id,
+    name: TRON_NETWORKS.nile.name,
+    logo: TRON_NETWORKS.nile.logo,
+    chain: TRON_NETWORKS.nile,
+  },
+];
+
 // Helper functions
 export const getChainById = (chainId: number) => {
-  return CHAINS.find(chain => chain.id === chainId);
+  return ALL_CHAINS.find(chain => chain.id === chainId);
 };
 
 export const getChainName = (chainId: number): string => {
@@ -49,5 +70,14 @@ export const getChainLogo = (chainId: number): string => {
 };
 
 export const isSupportedChain = (chainId: number): boolean => {
-  return CHAINS.some(chain => chain.id === chainId);
+  return ALL_CHAINS.some(chain => chain.id === chainId);
+};
+
+export const isTronChain = (chainId: number): boolean => {
+  return chainId === 3448148188; // Tron Nile chain ID
+};
+
+export const getTronNetwork = (chainId: number) => {
+  if (chainId === 3448148188) return TRON_NETWORKS.nile;
+  return null;
 };

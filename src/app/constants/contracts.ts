@@ -4,6 +4,7 @@ export const ChainIds = {
   BaseSepolia: 84532,
   MonadTestnet: 10143,
   EtherlinkTestnet: 128123,
+  TronNile: 3448148188,
 };
 export const ChainConfigs = {
   [ChainIds.Sepolia]: {
@@ -60,6 +61,18 @@ export const ChainConfigs = {
     TrueERC20: "0xE4F87948Efd25651CA20d8b0d750d94612f3FCB7",
     ChainName: "MonadTestnet",
     RpcUrl: "https://rpc.ankr.com/monad_testnet",
+    SafetyDeposit: parseEther("0.001"),
+  },
+  [ChainIds.TronNile]: {
+    LOP: "0x0656e98bf5b9457048b8ac0985cb48b1b6def4ac", // "TAYjAyuKjKvkhkcvgJ7CgrJ8PVziU5vr4R",
+    EscrowFactory: "0x527eb6a0f425c77722da1d92aa515f691606571b", // "THVQCzNgJxTvBRH297tmHXuxVdcahipy3f",
+    ResolverContractAddress: "0x9afd02fe7b017867e7468a0cacb3546c721edd84", // "TQ6iAAL9oV4Xh6DrQwZ8iGa7q1QAcwhpui",
+    ITRC: "0x19fbfa920c9579bce1006d2d512d49e2dc47de1c", //"TCLbkeYSQR9zX8D7svdQ85NbdSRCDWVM5R",
+    EscrowSrcImplementationAddress: "0x810deb8c21a11f0f10977378d403c995480c2b8c", // "TMjaqzSMeni2H8qSG2JyShS29dY8zgcm3V",
+    EscrowDstImplementationAddress: "0x724132e32346b5199e7821025bcae3a20c5717fb", // "TLPL921VcESVS3YKB1KnPxNmBENxTDB3jY",
+    TrueERC20: "0xf8dfdf1ab75de04f485a9871d9298a070b9bebc6", // "TYf8mVp2tC7K9AYbFFfv8gVH82JEkbKKDj",
+    ChainId: 3448148188, // NILE=3448148188,  Mainnet=728126428
+    RpcUrl: "https://nile.trongrid.io",
     SafetyDeposit: parseEther("0.001"),
   },
 };

@@ -18,7 +18,6 @@ export function Navbar() {
           <ConnectButton label="EVM Wallet">
           </ConnectButton>
           <WalletActionButton>
-            Tron Wallet
           </WalletActionButton>
         </div>
       </div>

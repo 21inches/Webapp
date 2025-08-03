@@ -5,6 +5,7 @@ import {
   sepolia,
 } from "wagmi/chains";
 import { type Token } from "../types/order";
+import { ChainIds } from "./contracts";
 
 // Token configurations
 export const TOKENS: Record<number, Token[]> = {
@@ -44,6 +45,16 @@ export const TOKENS: Record<number, Token[]> = {
       logo: "/blt-logo.svg",
     },
   ],
+  // Tron tokens
+  [ChainIds.TronNile]: [
+    {
+      symbol: "ITRC",
+      name: "ITRC Coin",
+      address: "TCLbkeYSQR9zX8D7svdQ85NbdSRCDWVM5R", // Test USDT on Nile
+      decimals: 6,
+      logo: "/blt-logo.svg",
+    },
+  ],
 };
 
 // LOP (Liquidity Optimization Protocol) addresses per chain
@@ -52,6 +63,7 @@ export const LOP_ADDRESSES: Record<number, string> = {
   [baseSepolia.id]: "0xe30f9abbadc1eb84b41d41035b2a2c7d0bd5f9b2",
   [monadTestnet.id]: "0xFCf9F11666Adb060D03Bb873954673f90914bAdE",
   [etherlinkTestnet.id]: "0x942DFf5Af350fd0816Bd03C91729633C293dB5dA",
+  [ChainIds.TronNile]: "0x0656e98bf5b9457048b8ac0985cb48b1b6def4ac",
 };
 
 // Helper functions
@@ -64,7 +76,7 @@ export const getTokenByAddress = (
   address: string
 ): Token | undefined => {
   return TOKENS[chainId]?.find(
-    token => token.address.toLowerCase() === address.toLowerCase()
+    (token: Token) => token.address.toLowerCase() === address.toLowerCase()
   );
 };
 

@@ -683,6 +683,17 @@ export default function SwapComponent() {
             0.001 ETH
           </span>
         </div>
+
+        <div className="flex justify-between items-center mt-2">
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            Allowance
+          </span>
+          <span className="text-sm font-medium text-gray-900 dark:text-white">
+            {allowance != null
+              ? formatUnits(allowance as bigint, swapState.fromToken.decimals)
+              : "0.00"}
+          </span>
+        </div>
       </div>
 
       {/* Action Button */}

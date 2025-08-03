@@ -50,6 +50,9 @@ importers:
       react-dom:
         specifier: 19.1.0
         version: 19.1.0(react@19.1.0)
+      tronweb:
+        specifier: ^6.0.4
+        version: 6.0.4(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       viem:
         specifier: ~2.33.2
         version: 2.33.2(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.22.4)

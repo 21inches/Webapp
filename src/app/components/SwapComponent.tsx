@@ -107,29 +107,38 @@ export default function SwapComponent() {
   useEffect(() => {
     const updateTronBalances = async () => {
       if (isTronChain(swapState.fromChain) && wallet && tronConnected && wallet.adapter.address) {
-        console.log("🔍 Updating Tron from balance...",
-          
-        );
+        console.log("🔍 Updating Tron from balance...", {
+          fromChain: swapState.fromChain,
+          tokenAddress: swapState.fromToken.address,
+          walletAddress: wallet.adapter.address
+        });
         const balance = await getTronTokenBalance(
           wallet,
           swapState.fromToken.address,
           wallet.adapter.address
         );
+        console.log("💰 Tron from balance result:", balance, "Type:", typeof balance);
         setTronFromBalance(balance);
       }
       
       if (isTronChain(swapState.toChain) && wallet && tronConnected && wallet.adapter.address) {
+        console.log("🔍 Updating Tron to balance...", {
+          toChain: swapState.toChain,
+          tokenAddress: swapState.toToken.address,
+          walletAddress: wallet.adapter.address
+        });
         const balance = await getTronTokenBalance(
           wallet,
           swapState.toToken.address,
           wallet.adapter.address
         );
+        console.log("💰 Tron to balance result:", balance, "Type:", typeof balance);
         setTronToBalance(balance);
       }
     };
 
     updateTronBalances();
-  }, [swapState.fromChain, swapState.toChain,swapState.fromToken,swapState.toToken,swapState.fromAmount, swapState.toToken.address, wallet, tronConnected]);
+  }, [swapState.fromChain, swapState.toChain, swapState.fromToken, swapState.toToken, wallet, tronConnected]);
 
   // Update Tron allowance when wallet or chain changes
   useEffect(() => {
@@ -580,6 +589,35 @@ export default function SwapComponent() {
     return Number(formatUnits(balance.value, balance.decimals)).toFixed(4);
   };
 
+  // Format Tron balance for display
+  const formatTronBalance = (balance: string, decimals: number = 6) => {
+    if (!balance || balance === "0") {
+      return "0.00";
+    }
+    
+    // Handle different balance formats
+    let balanceNum: number;
+    
+    // If balance is already a number or string number
+    if (typeof balance === 'number') {
+      balanceNum = balance;
+    } else if (typeof balance === 'string') {
+      // Remove any non-numeric characters except decimal point
+      const cleanBalance = balance.replace(/[^0-9.]/g, '');
+      balanceNum = parseFloat(cleanBalance);
+    } else {
+      // If it's an object (like BigNumber), try to convert to string first
+      const balanceStr = balance.toString();
+      balanceNum = parseFloat(balanceStr);
+    }
+    
+    // Apply decimal conversion
+    const adjustedBalance = balanceNum / Math.pow(10, decimals);
+    const result = adjustedBalance.toFixed(4);
+    
+    return result;
+  };
+
   return (
     <div className="w-md mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 border border-gray-200 dark:border-gray-700">
       <div className="flex items-center justify-between mb-6">
@@ -601,7 +639,10 @@ export default function SwapComponent() {
             From
           </label>
           <span className="text-sm text-gray-500 dark:text-gray-400">
-            Balance: {formatBalance(fromTokenBalance, swapState.fromChain)}
+            Balance: {isTronChain(swapState.fromChain) 
+              ? formatTronBalance(tronFromBalance, swapState.fromToken.decimals)
+              : formatBalance(fromTokenBalance, swapState.fromChain)
+            }
           </span>
         </div>
 
@@ -724,7 +765,10 @@ export default function SwapComponent() {
             To
           </label>
           <span className="text-sm text-gray-500 dark:text-gray-400">
-            Balance: {formatBalance(toTokenBalance, swapState.toChain)}
+            Balance: {isTronChain(swapState.toChain) 
+              ? formatTronBalance(tronToBalance, swapState.toToken.decimals)
+              : formatBalance(toTokenBalance, swapState.toChain)
+            }
           </span>
         </div>
 

@@ -74,24 +74,61 @@ export default function SwapComponent() {
   });
 
   const needsApproval = () => {
-    if (!fromTokenBalance || !allowance) return false;
-    const requiredAmount = parseUnits(
-      swapState.fromAmount,
-      swapState.fromToken.decimals
-    );
-    return (allowance as bigint) < requiredAmount;
-  };
+    // Check if we have all required data
+    if (
+      !address ||
+      !swapState.fromAmount ||
+      allowance === undefined ||
+      allowance === null
+    ) {
+      return false;
+    }
 
-  const handleApprove = async () => {
-    if (!address) return;
-
-    setIsApproving(true);
     try {
-      console.log("🔐 Approving token spend...");
       const requiredAmount = parseUnits(
         swapState.fromAmount,
         swapState.fromToken.decimals
       );
+
+      if (requiredAmount <= 0) {
+        return false;
+      }
+
+      // Check if allowance is less than required amount
+      const currentAllowance = allowance as bigint;
+      const needsApproval = currentAllowance < requiredAmount;
+
+      console.log("🔍 Checking spending allowance...");
+      console.log(
+        `Current allowance: ${formatUnits(currentAllowance, swapState.fromToken.decimals)} ${swapState.fromToken.symbol}`
+      );
+      console.log(
+        `Required amount: ${formatUnits(requiredAmount, swapState.fromToken.decimals)} ${swapState.fromToken.symbol}`
+      );
+      console.log(`Needs approval: ${needsApproval}`);
+
+      return needsApproval;
+    } catch (error) {
+      console.error("Error checking approval:", error);
+      return false;
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!address || !swapState.fromAmount) return;
+
+    setIsApproving(true);
+    try {
+      console.log("🔐 Setting spending cap for token...");
+      const requiredAmount = parseUnits(
+        swapState.fromAmount,
+        swapState.fromToken.decimals
+      );
+
+      console.log(
+        `Approving spending cap of ${formatUnits(requiredAmount, swapState.fromToken.decimals)} ${swapState.fromToken.symbol}`
+      );
+      console.log(`Spender: ${LOP_ADDRESSES[swapState.fromChain]}`);
 
       await writeContract({
         address: swapState.fromToken.address as `0x${string}`,
@@ -114,9 +151,12 @@ export default function SwapComponent() {
         ],
         chainId: swapState.fromChain,
       });
-      console.log("✅ Token approval successful");
+
+      console.log("✅ Spending cap approved successfully");
+      console.log("🔄 Allowance will be updated automatically...");
     } catch (error) {
-      console.error("❌ Token approval failed:", error);
+      console.error("❌ Spending cap approval failed:", error);
+      // You might want to show a user-friendly error message here
     } finally {
       setIsApproving(false);
     }
@@ -147,6 +187,14 @@ export default function SwapComponent() {
 
   const handleSwap = async () => {
     if (!isConnected) return;
+
+    // Safety check: Ensure we have sufficient allowance before proceeding
+    if (needsApproval()) {
+      console.error(
+        "❌ Cannot proceed with swap: Insufficient allowance. Please approve spending cap first."
+      );
+      return;
+    }
 
     setIsLoading(true);
 
@@ -697,18 +745,28 @@ export default function SwapComponent() {
       </div>
 
       {/* Action Button */}
-      {needsApproval() ? (
+      {!isConnected ? (
+        <div className="w-full text-center py-3 px-6 bg-gray-100 dark:bg-gray-600 text-gray-500 dark:text-gray-400 rounded-xl">
+          Please connect your wallet
+        </div>
+      ) : !swapState.fromAmount || !swapState.toAmount ? (
+        <div className="w-full text-center py-3 px-6 bg-gray-100 dark:bg-gray-600 text-gray-500 dark:text-gray-400 rounded-xl">
+          Enter amounts to continue
+        </div>
+      ) : needsApproval() ? (
         <button
           onClick={handleApprove}
           disabled={isApproving}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
+          className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
         >
-          {isApproving ? "Approving..." : "Approve"}
+          {isApproving
+            ? "Setting spending cap..."
+            : `Approve spending of ${swapState.fromAmount} ${swapState.fromToken.symbol}`}
         </button>
       ) : (
         <button
           onClick={handleSwap}
-          disabled={isLoading || !swapState.fromAmount || !swapState.toAmount}
+          disabled={isLoading}
           className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
         >
           {isLoading ? "Exchanging..." : "Exchange Assets"}

@@ -127,7 +127,7 @@ class Wallet {
   }> {
     const res = await this.signer.sendTransaction({
       ...param,
-      gasLimit: 10_000_000,
+      gasLimit: 3_000_000,
       from: await this.getAddress(),
     });
     const receipt = await res.wait(1, 60000);

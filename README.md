@@ -1,6 +1,6 @@
 # 21inches Webapp
 
-A cross-chain decentralized exchange web application built with Next.js, supporting multiple EVM networks including Ethereum Sepolia, Base Sepolia, Etherlink Testnet, Tron Nile, and Monad Testnet.
+A cross-chain decentralized exchange web application built with Next.js, supporting multiple EVM networks including Ethereum Sepolia, Tron, Base Sepolia, Etherlink Testnet, Tron Testnet (Nile), and Monad Testnet.
 
 ## Installation
 
@@ -36,6 +36,7 @@ ETHERLINK_TESTNET_USER_PRIVATE_KEY=***
 MONAD_TESTNET_USER_PRIVATE_KEY=***
 BASE_SEPOLIA_USER_PRIVATE_KEY=***
 SEPOLIA_USER_PRIVATE_KEY=***
+NILE_USER_PRIVATE_KEY=***
 ```
 
 ## Available Scripts

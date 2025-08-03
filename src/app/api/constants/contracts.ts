@@ -1,7 +1,7 @@
 import { Address, EscrowFactory } from "@1inch/cross-chain-sdk";
 import dotenv from "dotenv";
 import { JsonRpcProvider } from "ethers";
-import { parseEther } from "viem";
+import { parseEther, parseUnits } from "viem";
 import { getDestinationImpl, getSourceImpl } from "../order/escrow";
 import { Wallet } from "../order/wallet";
 dotenv.config();
@@ -11,6 +11,7 @@ export const ChainIds = {
   BaseSepolia: 84532,
   MonadTestnet: 10143,
   EtherlinkTestnet: 128123,
+  NILE: 3448148188,
 };
 export const ChainConfigs = {
   [ChainIds.Sepolia]: {
@@ -72,6 +73,20 @@ export const ChainConfigs = {
     RpcUrl: "https://rpc.ankr.com/monad_testnet",
     ResolverPrivateKey: process.env.MONAD_TESTNET_USER_PRIVATE_KEY,
     SafetyDeposit: parseEther("0.001"),
+  },
+  [ChainIds.NILE]: {
+    LOP: "0x0656e98bf5b9457048b8ac0985cb48b1b6def4ac", // TAYjAyuKjKvkhkcvgJ7CgrJ8PVziU5vr4R
+    EscrowFactory: "0x527eb6a0f425c77722da1d92aa515f691606571b", // THVQCzNgJxTvBRH297tmHXuxVdcahipy3f
+    ResolverContractAddress: "0x9afd02fe7b017867e7468a0cacb3546c721edd84", // TQ6iAAL9oV4Xh6DrQwZ8iGa7q1QAcwhpui
+    BLT: "",
+    ITRC: "0x19fbfa920c9579bce1006d2d512d49e2dc47de1c", //"TCLbkeYSQR9zX8D7svdQ85NbdSRCDWVM5R",
+    EscrowSrcImplementationAddress: "0x810deb8c21a11f0f10977378d403c995480c2b8c", // TMjaqzSMeni2H8qSG2JyShS29dY8zgcm3V
+    EscrowDstImplementationAddress: "0x724132e32346b5199e7821025bcae3a20c5717fb", // TLPL921VcESVS3YKB1KnPxNmBENxTDB3jY
+    TrueERC20: "0xf8dfdf1ab75de04f485a9871d9298a070b9bebc6", // TYf8mVp2tC7K9AYbFFfv8gVH82JEkbKKDj
+    ChainName: "NILE",
+    RpcUrl: "https://nile.trongrid.io",
+    ResolverPrivateKey: process.env.NILE_USER_PRIVATE_KEY,
+    SafetyDeposit: parseUnits("1", 6), // TRX decimal is 6
   },
 };
 export const getChainResolver = (chainId: number) => {

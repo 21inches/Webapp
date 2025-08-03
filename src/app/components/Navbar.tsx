@@ -1,5 +1,7 @@
-import Image from "next/image";
+"use client"
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { WalletActionButton } from "@tronweb3/tronwallet-adapter-react-ui";
+import Image from "next/image";
 
 export function Navbar() {
   return (
@@ -12,8 +14,12 @@ export function Navbar() {
           height={100}
         />
         <div className="flex-1" />
-        <div className="flex items-center justify-end pr-4">
-          <ConnectButton></ConnectButton>
+        <div className="flex items-center justify-end pr-4 gap-2">
+          <ConnectButton label="EVM Wallet">
+          </ConnectButton>
+          <WalletActionButton>
+            Tron Wallet
+          </WalletActionButton>
         </div>
       </div>
     </header>

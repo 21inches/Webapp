@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
-import "./globals.css";
-import { RainbowProvider } from "./RainbowProvider";
-import { Navbar } from "./components/Navbar";
+import { CombinedWalletProvider } from "./CombinedWalletProvider";
 import { Footer } from "./components/Footer";
+import { Navbar } from "./components/Navbar";
+import "./globals.css";
 
 const roboto = Roboto({
   weight: "400",
@@ -23,13 +23,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${roboto.className}`}>
-        <RainbowProvider>
+        <CombinedWalletProvider>
           <div className=" relative w-full">
             <Navbar />
             {children}
             <Footer />
           </div>
-        </RainbowProvider>
+        </CombinedWalletProvider>
       </body>
     </html>
   );

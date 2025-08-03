@@ -103,49 +103,26 @@ export default function SwapComponent() {
     chainId: swapState.fromChain,
   });
 
-  // Debug logging for allowance
-  useEffect(() => {
-    console.log("🔍 [useReadContract] Allowance data:", {
-      allowance: allowance?.toString(),
-      isLoading: allowanceLoading,
-      error: allowanceError,
-      address: !!address,
-      tokenAddress: swapState.fromToken.address,
-      chainId: swapState.fromChain,
-      isTronChain: isTronChain(swapState.fromChain)
-    });
-  }, [allowance, allowanceLoading, allowanceError, address, swapState.fromToken.address, swapState.fromChain]);
+
 
   // Update Tron balances when wallet or chain changes
   useEffect(() => {
     const updateTronBalances = async () => {
       if (isTronChain(swapState.fromChain) && wallet && tronConnected && wallet.adapter.address) {
-        console.log("🔍 Updating Tron from balance...", {
-          fromChain: swapState.fromChain,
-          tokenAddress: swapState.fromToken.address,
-          walletAddress: wallet.adapter.address
-        });
         const balance = await getTronTokenBalance(
           wallet,
           swapState.fromToken.address,
           wallet.adapter.address
         );
-        console.log("💰 Tron from balance result:", balance, "Type:", typeof balance);
         setTronFromBalance(balance);
       }
       
       if (isTronChain(swapState.toChain) && wallet && tronConnected && wallet.adapter.address) {
-        console.log("🔍 Updating Tron to balance...", {
-          toChain: swapState.toChain,
-          tokenAddress: swapState.toToken.address,
-          walletAddress: wallet.adapter.address
-        });
         const balance = await getTronTokenBalance(
           wallet,
           swapState.toToken.address,
           wallet.adapter.address
         );
-        console.log("💰 Tron to balance result:", balance, "Type:", typeof balance);
         setTronToBalance(balance);
       }
     };
@@ -157,13 +134,6 @@ export default function SwapComponent() {
   useEffect(() => {
     const updateTronAllowance = async () => {
       if (isTronChain(swapState.fromChain) && wallet && tronConnected && wallet.adapter.address) {
-        console.log("🔍 [updateTronAllowance] Updating Tron allowance...", {
-          fromChain: swapState.fromChain,
-          tokenAddress: swapState.fromToken.address,
-          walletAddress: wallet.adapter.address,
-          lopAddress: LOP_ADDRESSES[swapState.fromChain]
-        });
-        
         const allowance = await checkTronTokenAllowance(
           wallet,
           swapState.fromToken.address,
@@ -171,7 +141,6 @@ export default function SwapComponent() {
           LOP_ADDRESSES[swapState.fromChain]
         );
         
-        console.log("💰 [updateTronAllowance] Tron allowance result:", allowance);
         setTronAllowance(allowance);
       }
     };
@@ -179,62 +148,24 @@ export default function SwapComponent() {
     updateTronAllowance();
   }, [swapState.fromChain, swapState.fromToken, wallet, tronConnected]);
 
-  // Update EVM allowance when wallet, chain, or token changes
-  useEffect(() => {
-    console.log("🔍 [updateEVMAllowance] EVM allowance dependencies changed:", {
-      fromChain: swapState.fromChain,
-      fromToken: swapState.fromToken.address,
-      address: !!address,
-      isTronChain: isTronChain(swapState.fromChain),
-      lopAddress: LOP_ADDRESSES[swapState.fromChain]
-    });
-  }, [swapState.fromChain, swapState.fromToken, address]);
-
   const needsApproval = () => {
-    console.log("🔍 [needsApproval] Checking approval requirements...", {
-      fromAmount: swapState.fromAmount,
-      fromChain: swapState.fromChain,
-      isTronChain: isTronChain(swapState.fromChain),
-      tronConnected,
-      hasWallet: !!wallet,
-      tronAllowance,
-      fromTokenBalance: !!fromTokenBalance,
-      allowance: !!allowance,
-      address: !!address,
-      fromTokenAddress: !!swapState.fromToken.address,
-      lopAddress: !!LOP_ADDRESSES[swapState.fromChain]
-    });
-
     if (!swapState.fromAmount || parseFloat(swapState.fromAmount) <= 0) {
-      console.log("🔍 [needsApproval] No amount or zero amount, no approval needed");
       return false;
     }
     
     if (isTronChain(swapState.fromChain)) {
       // For Tron chains, check allowance using Tron wallet
       if (!tronConnected || !wallet) {
-        console.log("🔍 [needsApproval] Tron wallet not connected, no approval needed");
         return false;
       }
       
       const requiredAmount = parseFloat(swapState.fromAmount) * Math.pow(10, swapState.fromToken.decimals);
       const currentAllowance = parseFloat(tronAllowance);
       
-      console.log("🔍 [needsApproval] Tron approval check:", {
-        requiredAmount,
-        currentAllowance,
-        needsApproval: currentAllowance < requiredAmount
-      });
-      
       return currentAllowance < requiredAmount;
     } else {
       // For EVM chains, use wagmi allowance
       if (!address || allowance === undefined || allowance === null) {
-        console.log("🔍 [needsApproval] EVM wallet not connected or no allowance data", {
-          hasAddress: !!address,
-          hasAllowance: allowance !== undefined && allowance !== null,
-          allowanceValue: allowance?.toString() || "not available"
-        });
         return false;
       }
       const requiredAmount = parseUnits(
@@ -242,12 +173,6 @@ export default function SwapComponent() {
         swapState.fromToken.decimals
       );
       const needsApproval = (allowance as bigint) < requiredAmount;
-      
-      console.log("🔍 [needsApproval] EVM approval check:", {
-        requiredAmount: requiredAmount.toString(),
-        currentAllowance: allowance.toString(),
-        needsApproval
-      });
       
       return needsApproval;
     }
@@ -290,7 +215,12 @@ export default function SwapComponent() {
         if (!address) {
           throw new Error("EVM wallet not connected");
         }
+        
         await switchChain({ chainId: swapState.fromChain });
+        
+        // Add a delay to ensure the chain switch is complete
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
         const requiredAmount = parseUnits(
           swapState.fromAmount,
           swapState.fromToken.decimals
@@ -405,9 +335,8 @@ export default function SwapComponent() {
         // For EVM chains, use wagmi switchChain
         if (typeof swapState.fromChain === "number") {
           await switchChain({ chainId: swapState.fromChain });
-          console.log("Switched to EVM source chain");
-          // Add a small delay to ensure the chain switch is complete
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          // Add a delay to ensure the chain switch is complete
+          await new Promise(resolve => setTimeout(resolve, 2000));
         } else {
           throw new Error("Invalid chain ID for EVM network");
         }
@@ -431,8 +360,6 @@ export default function SwapComponent() {
         swapState.toToken.decimals
       );
 
-      console.log("🔐 Signing order data...");
-      console.log("🔐 Order data:", order.orderdata);
       const signature = await signTypedDataAsync(order.orderdata);
 
       console.log("📦 Preparing order for submission...");
